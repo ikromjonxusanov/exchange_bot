@@ -66,13 +66,6 @@ class User(AbstractUser):
 
     objects = UserManager()
 
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name)
-        else:
-            self.slug = slugify(self.slug)
-        super(User, self).save(*args, **kwargs)
-
     def __str__(self):
         return str(self.full_name)
 

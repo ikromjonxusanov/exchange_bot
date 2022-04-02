@@ -8,9 +8,12 @@ PHONE = 3
 ALL = 4
 
 
-def start(update: Update, context: CallbackContext):
+def start(update: Update, context: CallbackContext, pk=None):
     # print(update.message)
-    user_id = update.message.from_user.id
+    if pk is None:
+        user_id = update.message.from_user.id
+    else:
+        user_id = pk
     user = get_bot_user(user_id)
     if user.is_active:
         update.message.reply_html(Message(user.lang).HOME, reply_markup=get_keyboard(lang=user.lang))
@@ -21,7 +24,10 @@ def start(update: Update, context: CallbackContext):
             InlineKeyboardButton(text="🇷🇺 русский язык", callback_data="ru")
         ]
     ])
-    update.message.reply_html("Tilni tanlang👇\n-----------\nВыберите язык👇", reply_markup=keyboard)
+    if pk is None:
+        update.message.reply_html("Tilni tanlang👇\n-----------\nВыберите язык👇", reply_markup=keyboard)
+    else:
+        update.callback_query.edit_message_text("Tilni tanlang👇\n-----------\nВыберите язык👇", reply_markup=keyboard)
     return LANG
 
 

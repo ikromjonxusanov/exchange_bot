@@ -5,6 +5,7 @@ from telegram.ext import Updater, ConversationHandler, CallbackQueryHandler, Com
 from telegram.utils.request import Request
 
 from core.bot.auth import start, uz, ru, full_name, phonenumber, set_language, uz_set, ru_set
+from core.bot.utils import setting, home
 
 LANG = 1
 FULL_NAME = 2
@@ -18,6 +19,7 @@ class Command(BaseCommand):
     def entry_points(self) -> list:
         return [
             CommandHandler('start', start),
+            CallbackQueryHandler(home, pattern='home'),
         ]
 
     def handle(self, *args, **options):
@@ -43,6 +45,7 @@ class Command(BaseCommand):
                 ],
                 ALL: self.entry_points() + [
                     CallbackQueryHandler(set_language, pattern="setLang"),
+                    CallbackQueryHandler(setting, pattern="settings"),
                     CallbackQueryHandler(uz_set, pattern="uz-set"),
                     CallbackQueryHandler(ru_set, pattern="ru-set")
                     # MessageHandler(Filters.location, location),

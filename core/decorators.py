@@ -7,11 +7,12 @@ from core.bot.helpers import get_bot_user
 def login_user_query(view_func):
     def wrapper(update: Update, context: CallbackContext):
         query = update.callback_query
-        user = get_bot_user(query.from_user.id)
+        user_id = query.from_user.id
+        user = get_bot_user(user_id)
         if user.is_active:
             return view_func(update, context)
         else:
-            start(update, context)
+            start(update, context, user_id)
 
     return wrapper
 

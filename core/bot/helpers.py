@@ -11,9 +11,9 @@ class Message:
                         "valyutalar bilan tezkor ayirboshlashingiz  mumkin!"
             self.settings = "⚙️ Sozlamalar"
         else:
-            self.HOME = "🤓Valyuta ayirboshlash xizmatiga xush kelibsiz. Siz bilan ko‘rishib turganimizdan xursandmiz." \
-                        "\n\n☝️Eslatma: Siz bizning botimiz orqali o‘z pullaringizni boshqa " \
-                        "valyutalar bilan tezkor ayirboshlashingiz  mumkin!"
+            self.HOME = "🤓Добро пожаловать в пункт обмена валюты. Приятно познакомиться." \
+                        "\n \n☝️Примечание: Вы можете перевести свои деньги через нашего бота" \
+                        "Вы можете быстро обменять валюту!"
             self.settings = "⚙️ Настройки"
 
 
@@ -26,15 +26,13 @@ class ButtonText:
             self.exchanges = "🧾 Almashuvlar"
             self.contact = "📞 Qayta aloqa"
             self.settings = "⚙️ Sozlamalar"
-            self.qiwi = "🔖 <b>\"QIWI\"</b> Identifikatsiya"
         else:
-            self.currency_exchange = "💱️ Valyuta ayirboshlash"
-            self.wallet = "🔰 Hamyonlar"
-            self.course_reserve = "📈 Kurs / 💰 Zahira"
-            self.exchanges = "🧾 Almashuvlar"
-            self.contact = "📞 Qayta aloqa"
-            self.settings = "⚙️ Sozlamalar"
-            self.qiwi = "🔖 <b>\"QIWI\"</b> Identifikatsiya"
+            self.currency_exchange = "♻️ Обмен валюты"
+            self.wallet = "🔰 Кошельки"
+            self.course_reserve = "📈 Курс / 💰 Забронировать"
+            self.exchanges = "🧾 Обмены"
+            self.contact = "📞 Обратная связь"
+            self.settings = "⚙️ Настройки"
 
 
 class ContextData:
