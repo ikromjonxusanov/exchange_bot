@@ -40,6 +40,7 @@ def set_lang(lang, user_id):
 def uz(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
+    query.message.delete()
     set_lang('uz', query.from_user.id)
     query.message.reply_html("To'liq ismingizni kiriting")
     return FULL_NAME
@@ -48,6 +49,7 @@ def uz(update: Update, context: CallbackContext) -> int:
 def ru(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
+    query.message.delete()
     set_lang('ru', query.from_user.id)
     query.message.reply_html("Введите ваше полное имя")
     return FULL_NAME
@@ -107,3 +109,14 @@ def phonenumber(update: Update, context: CallbackContext) -> int:
     user.save()
     update.message.reply_html(Message(user.lang).HOME, reply_markup=get_keyboard(user.lang))
     return ALL
+
+
+def edit_full_name(update: Update, context: CallbackContext) -> int:
+    user_id = update.message.from_user.id
+    user = get_bot_user(user_id)
+    user.full_name = update.message.text
+    user.save()
+    update.message.delete()
+    update.message.reply_html(Message(user.lang).HOME, reply_markup=get_keyboard(user.lang))
+    return ALL
+

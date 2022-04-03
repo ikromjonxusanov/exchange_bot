@@ -17,7 +17,8 @@ ALLOWED_HOSTS = env('ALLOWED_HOSTS')
 
 PROJECT_APPS = [
     'account',
-    'core'
+    'core',
+    'common'
 ]
 
 THIRD_PARTY_APPS = [

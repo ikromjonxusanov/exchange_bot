@@ -4,13 +4,15 @@ from telegram import Bot
 from telegram.ext import Updater, ConversationHandler, CallbackQueryHandler, CommandHandler, MessageHandler, Filters
 from telegram.utils.request import Request
 
-from core.bot.auth import start, uz, ru, full_name, phonenumber, set_language, uz_set, ru_set
-from core.bot.utils import setting, home
+from core.bot.auth import start, uz, ru, full_name, phonenumber, set_language, uz_set, ru_set, edit_full_name
+from core.bot.helpers import ContextData
+from core.bot.utils import setting, home, feedback, set_full_name
 
 LANG = 1
 FULL_NAME = 2
 PHONE = 3
 ALL = 4
+SET_LANG = 5
 
 
 class Command(BaseCommand):
@@ -19,7 +21,15 @@ class Command(BaseCommand):
     def entry_points(self) -> list:
         return [
             CommandHandler('start', start),
-            CallbackQueryHandler(home, pattern='home'),
+            CallbackQueryHandler(home, pattern=ContextData.HOME),
+            CallbackQueryHandler(set_language, pattern="setLang"),
+            CallbackQueryHandler(setting, pattern=ContextData.SETTINGS),
+            CallbackQueryHandler(feedback, pattern=ContextData.FEEDBACK),
+            CallbackQueryHandler(set_full_name, pattern="setFullName"),
+            CallbackQueryHandler(uz_set, pattern="uz-set"),
+            CallbackQueryHandler(ru_set, pattern="ru-set"),
+            CallbackQueryHandler(uz, pattern='^(uz)$'),
+            CallbackQueryHandler(ru, pattern='^(ru)$'),
         ]
 
     def handle(self, *args, **options):
@@ -32,8 +42,7 @@ class Command(BaseCommand):
             states={
                 LANG: [
                     CallbackQueryHandler(start, pattern='start'),
-                    CallbackQueryHandler(uz, pattern='^(uz)$'),
-                    CallbackQueryHandler(ru, pattern='^(ru)$')
+
                 ],
                 FULL_NAME: [
                     CommandHandler('start', start),
@@ -44,12 +53,11 @@ class Command(BaseCommand):
                     MessageHandler(Filters.contact, phonenumber)
                 ],
                 ALL: self.entry_points() + [
-                    CallbackQueryHandler(set_language, pattern="setLang"),
-                    CallbackQueryHandler(setting, pattern="settings"),
-                    CallbackQueryHandler(uz_set, pattern="uz-set"),
-                    CallbackQueryHandler(ru_set, pattern="ru-set")
                     # MessageHandler(Filters.location, location),
                 ],
+                SET_LANG: self.entry_points() + [
+                    MessageHandler(Filters.text, edit_full_name),
+                ]
 
             },
             fallbacks=[]
