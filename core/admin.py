@@ -4,7 +4,7 @@ from .models import Currency, AcceptableCurrency, Wallet, Exchange
 
 @admin.register(Currency)
 class CurrencyAdmin(admin.ModelAdmin):
-    list_display = ("name", "buy", "sell")
+    list_display = ("name", "buy", "sell", 'reserve')
     list_display_links = list_display
     search_fields = ('name',)
 

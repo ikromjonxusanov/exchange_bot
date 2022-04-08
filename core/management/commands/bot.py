@@ -6,7 +6,8 @@ from telegram.utils.request import Request
 
 from core.bot.auth import start, uz, ru, full_name, phonenumber, set_language, uz_set, ru_set, edit_full_name
 from core.bot.helpers import ContextData
-from core.bot.utils import setting, home, feedback, set_full_name
+from core.bot.utils import setting, home, feedback, set_full_name, currency_exchange, give, get, none, course_reserve, \
+    reserve
 
 LANG = 1
 FULL_NAME = 2
@@ -21,15 +22,21 @@ class Command(BaseCommand):
     def entry_points(self) -> list:
         return [
             CommandHandler('start', start),
-            CallbackQueryHandler(home, pattern=ContextData.HOME),
-            CallbackQueryHandler(set_language, pattern="setLang"),
-            CallbackQueryHandler(setting, pattern=ContextData.SETTINGS),
-            CallbackQueryHandler(feedback, pattern=ContextData.FEEDBACK),
-            CallbackQueryHandler(set_full_name, pattern="setFullName"),
-            CallbackQueryHandler(uz_set, pattern="uz-set"),
-            CallbackQueryHandler(ru_set, pattern="ru-set"),
+            CallbackQueryHandler(home, pattern="^(" + ContextData.HOME + ")$"),
+            CallbackQueryHandler(set_language, pattern="^(setLang)$"),
+            CallbackQueryHandler(setting, pattern="^(" + ContextData.SETTINGS + ")$"),
+            CallbackQueryHandler(feedback, pattern="^(" + ContextData.FEEDBACK + ")$"),
+            CallbackQueryHandler(set_full_name, pattern="^(setFullName)$"),
+            CallbackQueryHandler(currency_exchange, pattern="^(exchange)$"),
+            CallbackQueryHandler(uz_set, pattern="^(uz-set)$"),
+            CallbackQueryHandler(ru_set, pattern="^(ru-set)$"),
             CallbackQueryHandler(uz, pattern='^(uz)$'),
             CallbackQueryHandler(ru, pattern='^(ru)$'),
+            CallbackQueryHandler(none, pattern='^(none)$'),
+            CallbackQueryHandler(course_reserve, pattern='^(course_reserve)$'),
+            CallbackQueryHandler(reserve, pattern='^(reserve)$'),
+            CallbackQueryHandler(give, pattern='give'),
+            CallbackQueryHandler(get, pattern='get'),
         ]
 
     def handle(self, *args, **options):
@@ -40,9 +47,8 @@ class Command(BaseCommand):
         all_handler = ConversationHandler(
             entry_points=self.entry_points(),
             states={
-                LANG: [
+                LANG: self.entry_points() + [
                     CallbackQueryHandler(start, pattern='start'),
-
                 ],
                 FULL_NAME: [
                     CommandHandler('start', start),

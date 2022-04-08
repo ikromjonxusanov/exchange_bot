@@ -5,18 +5,27 @@ from account.models import BotUser
 
 class Currency(models.Model):
     name = models.CharField(max_length=100, null=True)
-    buy = models.DecimalField(max_digits=12, decimal_places=2)
-    sell = models.DecimalField(max_digits=12, decimal_places=2)
+    buy = models.FloatField(null=True, blank=True)
+    sell = models.FloatField(null=True, blank=True)
     validate = models.CharField(max_length=100, null=True, blank=True)
-    reserve = models.DecimalField(max_digits=12, decimal_places=6)
-    is_sell = models.BooleanField(default=True)
+    code = models.CharField(max_length=6)
+    reserve = models.FloatField()
     example = models.CharField(max_length=50)
-    country = models.CharField(max_length=5, null=True, blank=True)
+    min_buy = models.FloatField(null=True)
+    flag = models.CharField(max_length=5, default="🏳")
+    is_sell = models.BooleanField(default=True)
+    is_buy = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
 
 
 class AcceptableCurrency(models.Model):
     currency = models.ForeignKey(Currency, on_delete=models.CASCADE, related_name='currency')
-    acceptable = models.ManyToManyField(Currency, related_name='acceptable_currency')
+    acceptable = models.ManyToManyField(Currency, related_name='acceptable_currency', blank=True)
+
+    def __str__(self):
+        return self.currency.name
 
 
 class Wallet(models.Model):
