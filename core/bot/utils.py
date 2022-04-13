@@ -1,12 +1,14 @@
+from django.db import transaction
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from telegram.error import BadRequest
 from telegram.ext import CallbackContext
-from core.bot.helpers import get_bot_user, get_keyboard, Message, ContextData, ButtonText
+from core.bot.helpers import get_bot_user, get_keyboard, Message, ContextData, ButtonText, get_text_wallet
 from core.decorators import login_user_query
 from core.helpers import get_course_reserve, exchange_cancel_back_buttons, get_reserve
-from core.models import Currency, AcceptableCurrency
+from core.models import Currency, AcceptableCurrency, Wallet
 
 SET_LANG = 5
+wallet_name = dict()
 
 
 @login_user_query
@@ -207,3 +209,59 @@ def reserve(update: Update, context: CallbackContext):
         parse_mode="HTML",
         reply_markup=keyboard
     )
+
+
+@login_user_query
+def wallet(update: Update, context: CallbackContext):
+    query = update.callback_query
+    query.answer()
+    user = get_bot_user(query.from_user.id)
+    currencies = Currency.objects.all().values('id', 'name', "validate")
+    keyboard = []
+    tmp_b = []
+    keyboard.append([
+        InlineKeyboardButton(text=ButtonText(user.lang).back, callback_data=ContextData.HOME),
+    ])
+    for c in currencies:
+        tmp_b.append(InlineKeyboardButton(c['name'], callback_data=f"addW/{c['id']}"))
+        if len(tmp_b) == 2:
+            keyboard.append(tmp_b)
+            tmp_b = []
+    keyboard.append([
+        InlineKeyboardButton(text=ButtonText(user.lang).delete, callback_data=ContextData.HOME),
+    ])
+
+    query.edit_message_text(
+        text=Message(user.lang).wallet + get_text_wallet(),
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+
+@login_user_query
+def wallet_add(update: Update, context: CallbackContext):
+    query = update.callback_query
+    user = get_bot_user(query.from_user.id)
+    currency = Currency.objects.get(id=int(query.data.split('/')[1]))
+    w = Wallet.objects.filter(user=user, currency=currency).first()
+    text = f"💳 <b>{currency.name}</b>: {w}"
+    wallet_name[f"{user.tg_id}"] = w.id
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(ButtonText(user.lang).add_wallet, callback_data=f'add_card/{currency.id}'),
+            InlineKeyboardButton(ButtonText(user.lang).delete_wallet, callback_data=f'delete_card/{currency.id}')
+        ],
+        [
+            InlineKeyboardButton(ButtonText(user.lang).back, callback_data=ContextData.WALLET),
+        ],
+        [
+            InlineKeyboardButton(ButtonText(user.lang).back_home, callback_data=ContextData.HOME)
+        ]
+    ])
+    query.edit_message_text(
+        text=text,
+        parse_mode="HTML",
+        reply_markup=keyboard
+    )
+
+

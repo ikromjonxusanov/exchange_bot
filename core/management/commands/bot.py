@@ -7,7 +7,7 @@ from telegram.utils.request import Request
 from core.bot.auth import start, uz, ru, full_name, phonenumber, set_language, uz_set, ru_set, edit_full_name
 from core.bot.helpers import ContextData
 from core.bot.utils import setting, home, feedback, set_full_name, currency_exchange, give, get, none, course_reserve, \
-    reserve
+    reserve, wallet, wallet_add
 
 LANG = 1
 FULL_NAME = 2
@@ -37,6 +37,9 @@ class Command(BaseCommand):
             CallbackQueryHandler(reserve, pattern='^(reserve)$'),
             CallbackQueryHandler(give, pattern='give'),
             CallbackQueryHandler(get, pattern='get'),
+            CallbackQueryHandler(wallet, pattern='^(' + ContextData.WALLET + ")$"),
+            CallbackQueryHandler(wallet_add, pattern='addW'),
+
         ]
 
     def handle(self, *args, **options):

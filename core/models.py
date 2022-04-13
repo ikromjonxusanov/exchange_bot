@@ -19,6 +19,9 @@ class Currency(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        ordering = ['id']
+
 
 class AcceptableCurrency(models.Model):
     currency = models.ForeignKey(Currency, on_delete=models.CASCADE, related_name='currency')
@@ -32,6 +35,9 @@ class Wallet(models.Model):
     user = models.ForeignKey(BotUser, on_delete=models.CASCADE)
     currency = models.ForeignKey(Currency, on_delete=models.CASCADE)
     number = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.currency.name
 
 
 class Exchange(models.Model):
