@@ -39,7 +39,6 @@ def set_lang(lang, user_id):
 
 def uz(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
-    query.answer()
     query.message.delete()
     set_lang('uz', query.from_user.id)
     query.message.reply_html("To'liq ismingizni kiriting")
@@ -48,7 +47,6 @@ def uz(update: Update, context: CallbackContext) -> int:
 
 def ru(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
-    query.answer()
     query.message.delete()
     set_lang('ru', query.from_user.id)
     query.message.reply_html("Введите ваше полное имя")
@@ -75,21 +73,18 @@ def full_name(update: Update, context: CallbackContext) -> int:
 
 def uz_set(update: Update, context: CallbackContext):
     query = update.callback_query
-    query.answer()
     set_lang(lang='uz', user_id=query.from_user.id)
     query.edit_message_text(Message("uz").HOME, parse_mode="HTML", reply_markup=get_keyboard('uz'))
 
 
 def ru_set(update: Update, context: CallbackContext):
     query = update.callback_query
-    query.answer()
     set_lang(lang='ru', user_id=query.from_user.id)
     query.edit_message_text(Message("ru").HOME, parse_mode="HTML", reply_markup=get_keyboard('ru'))
 
 
 def set_language(update: Update, context: CallbackContext):
     query = update.callback_query
-    query.answer()
     user = get_bot_user(query.from_user.id)
     keyboard = InlineKeyboardMarkup([
         [

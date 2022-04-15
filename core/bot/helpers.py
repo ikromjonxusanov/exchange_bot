@@ -1,7 +1,7 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from account.models import BotUser
-from core.models import Exchange, Currency
+from core.models import Exchange, Currency, Wallet
 
 
 def get_feedback(lang):
@@ -78,8 +78,9 @@ class ButtonText:
             self.reserve = "💰 Zahirani ko'rsatish"
             self.course = "📈 Kursni ko'rsatish"
             self.delete = "❌ Ma'lumotlarni o'chirish"
-            self.add_wallet = "➕ Qo'shish"
             self.delete_wallet = "❌ O'chirish"
+            self.yes = "✅ Ha"
+            self.no = "❌ Yo'q"
         else:
             self.currency_exchange = "♻️ Обмен валюты"
             self.wallet = "🔰 Кошельки"
@@ -95,8 +96,21 @@ class ButtonText:
             self.reserve = "💰 Показать Резервы"
             self.course = "📈 Показать Курс"
             self.delete = "❌ Удалить данные"
-            self.add_wallet = "➕ Добавлять"
             self.delete_wallet = "❌ Удалить"
+            self.yes = "✅ Да"
+            self.no = "❌ Нет"
+
+    def wallet_add_or_change(self, create: bool, lang: str) -> str:
+        if lang == 'uz':
+            if create:
+                return "➕ Qo'shish"
+            else:
+                return "✏ O'zgartirish"
+        else:
+            if create:
+                return "➕ Добавлять"
+            else:
+                return "✏ Изменить"
 
 
 class ContextData:
@@ -132,10 +146,11 @@ def get_bot_user(tg_id=None):
     return BotUser.objects.get_or_create(tg_id=tg_id)[0]
 
 
-def get_text_wallet():  # tg_id):
-    # user = get_bot_user(tg_id)
-    currencies = list(Currency.objects.all().values('name'))
+def get_text_wallet(user: BotUser):
+    currencies = list(Currency.objects.all().values('id', 'name'))
     txt = "\n"
     for c in currencies:
-        txt += f"\n💳 <b>{c['name']}</b>: Null"
+        card = Wallet.objects.filter(user=user, currency_id=c['id']).first()
+        resp = card.number if card else "Bo'sh" if user.lang == 'uz' else "Пустой"
+        txt += f"\n💳 <b>{c['name']}</b>: <i>{resp}</i>"
     return txt

@@ -41,6 +41,7 @@ class Wallet(models.Model):
 
 
 class Exchange(models.Model):
-    from_card = models.CharField(max_length=50)
-    to_card = models.CharField(max_length=50)
-    summa = models.DecimalField(max_digits=12, decimal_places=6)
+    user = models.ForeignKey(BotUser, on_delete=models.SET_NULL, null=True)
+    from_card = models.CharField(max_length=50, null=True)
+    to_card = models.CharField(max_length=50, null=True)
+    summa = models.FloatField(default=0)

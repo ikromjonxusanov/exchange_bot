@@ -1,6 +1,4 @@
 from django.core.management import BaseCommand
-from django.db import transaction
-
 from core.models import Currency, AcceptableCurrency
 import json
 from django.conf import settings
