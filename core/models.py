@@ -1,3 +1,4 @@
+import os
 from django.db import models
 
 from account.models import BotUser
@@ -45,3 +46,14 @@ class Exchange(models.Model):
     from_card = models.CharField(max_length=50, null=True)
     to_card = models.CharField(max_length=50, null=True)
     summa = models.FloatField(default=0)
+
+
+class Excel(models.Model):
+    name = models.CharField(max_length=50, null=True)
+    from_user = models.ForeignKey(BotUser, on_delete=models.SET_NULL, null=True)
+    file = models.FileField(default='static/null.xlsx')
+    create_at = models.DateTimeField(auto_now_add=True)
+
+    def delete(self, *args, **kwargs):
+        os.system(f"rm -rf uploads/{self.file.name}")
+        super(Excel, self).delete(*args, **kwargs)

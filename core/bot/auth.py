@@ -1,4 +1,5 @@
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, \
+    ReplyKeyboardRemove
 from telegram.ext import CallbackContext
 from core.bot.helpers import get_bot_user, get_keyboard, Message
 
@@ -16,7 +17,8 @@ def start(update: Update, context: CallbackContext, pk=None):
         user_id = pk
     user = get_bot_user(user_id)
     if user.is_active:
-        update.message.reply_html(Message(user.lang).HOME, reply_markup=get_keyboard(lang=user.lang))
+        update.message.reply_html(Message(user.lang).HOME,
+                                  reply_markup=get_keyboard(lang=user.lang, admin=user.is_admin))
         return ALL
     keyboard = InlineKeyboardMarkup([
         [
@@ -66,7 +68,7 @@ def full_name(update: Update, context: CallbackContext) -> int:
         text = "📲 Отправьте свой номер телефона"
 
     reply_markup = ReplyKeyboardMarkup([[KeyboardButton(btn_text, request_contact=True)]],
-                                       resize_keyboard=True)
+                                       resize_keyboard=True, selective=True)
     update.message.reply_html(text, reply_markup=reply_markup)
     return PHONE
 
@@ -102,7 +104,9 @@ def phonenumber(update: Update, context: CallbackContext) -> int:
     user.phone = update.message.contact.phone_number
     user.is_active = True
     user.save()
-    update.message.reply_html(Message(user.lang).HOME, reply_markup=get_keyboard(user.lang))
+    update.message.reply_html(text="🤖 Bot dan muvaffaqiyatlili ro‘yxatdan o‘tdingiz!!! ✅",
+                              reply_markup=ReplyKeyboardRemove(remove_keyboard=True))
+    update.message.reply_html(Message(user.lang).HOME, reply_markup=get_keyboard(user.lang, admin=user.is_admin))
     return ALL
 
 
@@ -112,6 +116,5 @@ def edit_full_name(update: Update, context: CallbackContext) -> int:
     user.full_name = update.message.text
     user.save()
     update.message.delete()
-    update.message.reply_html(Message(user.lang).HOME, reply_markup=get_keyboard(user.lang))
+    update.message.reply_html(Message(user.lang).HOME, reply_markup=get_keyboard(user.lang, admin=user.is_admin))
     return ALL
-

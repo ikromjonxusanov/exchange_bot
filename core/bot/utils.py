@@ -1,26 +1,36 @@
-import re
-
+import re, random as rn, datetime as d, string
 from django.db import transaction
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.error import BadRequest
 from telegram.ext import CallbackContext
 
-from core.bot.helpers import get_bot_user, get_keyboard, Message, ContextData, ButtonText, get_text_wallet
-from core.decorators import login_user_query, login_user
+from common.service import get_user_for_excel
+from core.bot.helpers import get_bot_user, get_keyboard, Message, ContextData, ButtonText, get_text_wallet, \
+    get_exchange_text
+from core.decorators import login_user_query, login_user, admin_user_query
 from core.helpers import get_course_reserve, exchange_cancel_back_buttons, get_reserve
-from core.models import Currency, AcceptableCurrency, Wallet
+from core.models import Currency, AcceptableCurrency, Wallet, Excel
 
 ALL = 4
 SET_LANG = 5
 CARD_ADD = 6
 wallet_name = dict()
+exchange_cards = dict()
+
+
+def generate_filename():
+    txt = "{:%Y}-{:%M}-{:%d}-".format(d.datetime.now(), d.datetime.now(), d.datetime.now(), d.datetime.now())
+    return txt + "".join([rn.choice(string.ascii_lowercase) for _ in range(40)])
 
 
 @login_user_query
 def home(update: Update, context: CallbackContext):
     query = update.callback_query
     user = get_bot_user(query.from_user.id)
-    query.edit_message_text(text=Message(user.lang).HOME, parse_mode="HTML", reply_markup=get_keyboard(user.lang))
+    query.message.delete()
+    query.message.reply_html(text=Message(user.lang).HOME,
+                             reply_markup=get_keyboard(user.lang, admin=user.is_admin))
+    return ALL
 
 
 @login_user_query
@@ -118,7 +128,8 @@ def give(update: Update, context: CallbackContext):
             InlineKeyboardButton(text="➖", callback_data=f'none')
         ])
     for i in range(len(acceptable)):
-        keyboard[i][1] = InlineKeyboardButton(text="🔶" + acceptable[i].name, callback_data=f'none')
+        keyboard[i][1] = InlineKeyboardButton(text="🔶" + acceptable[i].name,
+                                              callback_data=f'exchange-get/{pk}/{acceptable[i].id}')
 
     keyboard.extend(
         exchange_cancel_back_buttons(user.lang)
@@ -151,7 +162,8 @@ def get(update: Update, context: CallbackContext):
             InlineKeyboardButton(text="🔶" + c.name, callback_data=f'get/{c.id}'),
         ])
     for i in range(len(acceptable)):
-        keyboard[i][0] = InlineKeyboardButton(text="🔷" + acceptable[i].name, callback_data=f'none')
+        keyboard[i][0] = InlineKeyboardButton(text="🔷" + acceptable[i].name,
+                                              callback_data=f'exchange-get/{acceptable[i].id}/{pk}')
     keyboard.extend(
         exchange_cancel_back_buttons(user.lang)
     )
@@ -163,6 +175,33 @@ def get(update: Update, context: CallbackContext):
         )
     except BadRequest:
         print("No edit text")
+
+
+@login_user_query
+def exchange_get(update: Update, context: CallbackContext):
+    query = update.callback_query
+    user = get_bot_user(query.from_user.id)
+    from_card = Currency.objects.filter(id=int(query.data.split('/')[1])).first()
+    to_card = Currency.objects.filter(id=int(query.data.split('/')[2])).first()
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton(text=ButtonText(user.lang).give + from_card.name, callback_data="none")],
+        [InlineKeyboardButton(text=ButtonText(user.lang).get + to_card.name, callback_data="none")],
+        [InlineKeyboardButton(text=ButtonText(user.lang).cancel, callback_data=ContextData.HOME)],
+    ])
+    exchange_cards[str(user.tg_id)] = {"from_card": from_card, "to_card": to_card}
+    query.edit_message_text(text=get_exchange_text(user.lang, from_card, to_card),
+                            parse_mode="HTML",
+                            reply_markup=keyboard)
+
+
+@login_user_query
+def exchange_from_card(update: Update, context: CallbackContext):
+    pass
+
+
+@login_user
+def exchange_to_card(update: Update, context: CallbackContext):
+    pass
 
 
 def none(update: Update, context: CallbackContext):
@@ -277,6 +316,7 @@ def wallet_add(update: Update, context: CallbackContext):
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
+    return ALL
 
 
 @login_user_query
@@ -351,3 +391,72 @@ def user_wallet_add(update: Update, context: CallbackContext):
                 return ALL
         else:
             update.message.reply_html(f"<pre>{currency.example}</pre>\nquyidagicha kiriting")
+
+
+@admin_user_query
+def admin_get_data(update: Update, context: CallbackContext):
+    query = update.callback_query
+    user = get_bot_user(query.from_user.id)
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                text=ButtonText(user.lang).get_users_for_excel_button, callback_data='users_excel'
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=ButtonText(user.lang).get_changes_for_excel_button, callback_data='none'
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=ButtonText(user.lang).back_home, callback_data=ContextData.HOME
+            )
+        ]
+    ]
+    query.edit_message_text(
+        text=Message(user.lang).data_excel,
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+
+@admin_user_query
+def admin_users_excel(update: Update, context: CallbackContext):
+    query = update.callback_query
+    user = get_bot_user(query.from_user.id)
+    query.edit_message_text(
+        text="⏳ Ma'lumotlar <b>excel</b> formatga o'tkazilmoqda iltimos kuting!",
+        parse_mode='HTML'
+    )
+    excel = Excel(
+        name=f'Users get data for excel message id -> {query.message.message_id}',
+        from_user=user
+    )
+    file = get_user_for_excel(generate_filename())
+    excel.file = file
+    excel.save()
+    try:
+        query.message.reply_document(
+            document=open("uploads/" + str(excel.file), 'rb'),
+            filename="Customers.xlsx",
+            reply_markup=InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton(text=ButtonText(user.lang).back_home, callback_data=ContextData.HOME)
+                ]
+            ])
+        )
+        query.message.delete()
+    except FileNotFoundError:
+        query.edit_message_text(
+            text=Message(user.lang).get_data_excel_error,
+            reply_markup=InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton(text="👨🏻‍💻 Dasturchiga murojaat qilish",
+                                         url="https://t.me/ikromjonxusanov"),
+                ],
+                [
+                    InlineKeyboardButton(text=ButtonText(user.lang).back_home, callback_data=ContextData.HOME)
+                ]
+            ])
+        )

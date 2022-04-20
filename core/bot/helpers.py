@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from account.models import BotUser
@@ -39,6 +41,7 @@ def get_feedback(lang):
 
 class Message:
     def __init__(self, lang):
+        self.lang = lang
         if lang == "uz":
             self.HOME = "🤓Valyuta ayirboshlash xizmatiga xush kelibsiz. Siz bilan ko‘rishib turganimizdan xursandmiz." \
                         "\n\n☝️Eslatma: Siz bizning botimiz orqali o‘z pullaringizni boshqa " \
@@ -60,9 +63,21 @@ class Message:
 
         self.feedback = get_feedback(lang)
 
+    @property
+    def get_data_excel_error(self):
+        if self.lang == 'uz':
+            return "🤖 Ma'lumotni olishda xatolik yuz berdi ❌"
+        else:
+            return "🤖 Произошла ошибка при получении данных ❌"
+
+    @property
+    def data_excel(self):
+        return "✏ Botda to'plangan ma'lumotlar" if self.lang == 'uz' else "✏ Данные, собранные в боте"
+
 
 class ButtonText:
     def __init__(self, lang):
+        self.lang = lang
         if lang == "uz":
             self.currency_exchange = "♻️ Valyuta ayirboshlash"
             self.wallet = "🔰 Hamyonlar"
@@ -81,6 +96,9 @@ class ButtonText:
             self.delete_wallet = "❌ O'chirish"
             self.yes = "✅ Ha"
             self.no = "❌ Yo'q"
+            self.data = "📔 Ma'lumotlarni yuklab olish"
+            self.give = "⬆️Berishni kiritish "
+            self.get = "⬇️Olish kiritish "
         else:
             self.currency_exchange = "♻️ Обмен валюты"
             self.wallet = "🔰 Кошельки"
@@ -99,6 +117,9 @@ class ButtonText:
             self.delete_wallet = "❌ Удалить"
             self.yes = "✅ Да"
             self.no = "❌ Нет"
+            self.data = "📔 Скачать данные"
+            self.give = "⬆ Отдать "
+            self.get = "⬇ Получить "
 
     def wallet_add_or_change(self, create: bool, lang: str) -> str:
         if lang == 'uz':
@@ -111,6 +132,14 @@ class ButtonText:
                 return "➕ Добавлять"
             else:
                 return "✏ Изменить"
+
+    @property
+    def get_users_for_excel_button(self) -> str:
+        return "📈 Foydalanuvchilarni ma'lumotlari" if self.lang == 'uz' else "📈 Информация о пользователе"
+
+    @property
+    def get_changes_for_excel_button(self) -> str:
+        return "📈 Foydalanuvchilarni ma'lumotlari" if self.lang == 'uz' else "📈 Информация о пользователе"
 
 
 class ContextData:
@@ -125,8 +154,8 @@ class ContextData:
 ContextData = ContextData()
 
 
-def get_keyboard(lang):
-    return InlineKeyboardMarkup([
+def get_keyboard(lang, admin: bool = False):
+    buttons = [
         [
             InlineKeyboardButton(ButtonText(lang).currency_exchange, callback_data=ContextData.EXCHANGE),
             InlineKeyboardButton(ButtonText(lang).wallet, callback_data=ContextData.WALLET),
@@ -139,7 +168,10 @@ def get_keyboard(lang):
             InlineKeyboardButton(ButtonText(lang).settings, callback_data=ContextData.SETTINGS),
             InlineKeyboardButton(ButtonText(lang).feedback, callback_data=ContextData.FEEDBACK)
         ],
-    ])
+    ]
+    if admin:
+        buttons.append([InlineKeyboardButton(ButtonText(lang).data, callback_data='data')])
+    return InlineKeyboardMarkup(buttons)
 
 
 def get_bot_user(tg_id=None):
@@ -154,3 +186,21 @@ def get_text_wallet(user: BotUser):
         resp = card.number if card else "Bo'sh" if user.lang == 'uz' else "Пустой"
         txt += f"\n💳 <b>{c['name']}</b>: <i>{resp}</i>"
     return txt
+
+
+def get_exchange_text(lang: str, from_card: Currency, to_card: Currency) -> str:
+    if lang == 'uz':
+        return "⬆️<b>Berish</b>: <i>{}</i>\n⬇️<b>Olish</b>: <i>{}</i>\n🕗<b>Sana</b>: {:%d.%m.%Y}".format(
+            from_card.name,
+            to_card.name,
+            datetime.now()
+        )
+    else:
+        return "⬆️<b>Отдаете</b>: <i>{}</i>\n⬇️<b>Получаете</b>: <i>{}</i>\n🕗<b>Sana</b>: {:%d.%m.%Y}".format(
+            from_card.name,
+            to_card.name,
+            datetime.now()
+        )
+
+# ⬆️Отдать
+# ⬇️Получить

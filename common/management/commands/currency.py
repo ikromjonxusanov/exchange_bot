@@ -10,7 +10,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         currencies = []
-        file_path = settings.BASE_DIR / 'common1/currency.json'
+        file_path = settings.BASE_DIR / 'common/currency.json'
         with open(file_path) as f:
             data = json.load(f)
         for d in data:

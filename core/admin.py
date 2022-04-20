@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Currency, AcceptableCurrency, Wallet, Exchange
+from .models import Currency, AcceptableCurrency, Wallet, Exchange, Excel
 
 
 @admin.register(Currency)
@@ -25,3 +25,12 @@ class ExchangeAdmin(admin.ModelAdmin):
     list_display = ('from_card', 'to_card', 'summa')
     list_display_links = list_display
 
+
+@admin.register(Excel)
+class ExcelAdmin(admin.ModelAdmin):
+    list_display = ('from_user', 'name')
+    list_display_links = list_display
+    readonly_fields = ['file', 'from_user', 'create_at']
+
+    def has_add_permission(self, request):
+        return False

@@ -8,7 +8,8 @@ import logging
 from core.bot.auth import start, uz, ru, full_name, phonenumber, set_language, uz_set, ru_set, edit_full_name
 from core.bot.helpers import ContextData
 from core.bot.utils import setting, home, feedback, set_full_name, currency_exchange, give, get, none, course_reserve, \
-    reserve, wallet, wallet_add, add_card, user_wallet_add, delete_card, delete_wallets
+    reserve, wallet, wallet_add, add_card, user_wallet_add, delete_card, delete_wallets, admin_get_data, \
+    admin_users_excel, exchange_get
 from warnings import filterwarnings
 
 filterwarnings(action="ignore", message=r".*CallbackQueryHandler")
@@ -54,7 +55,9 @@ class Command(BaseCommand):
             CallbackQueryHandler(add_card, pattern='add_card'),
             CallbackQueryHandler(delete_card, pattern='delete_card'),
             CallbackQueryHandler(delete_wallets, pattern='delete_wallets'),
-
+            CallbackQueryHandler(admin_get_data, pattern='^(data)$'),
+            CallbackQueryHandler(admin_users_excel, pattern='^(users_excel)$'),
+            CallbackQueryHandler(exchange_get, pattern='exchange-get'),
         ]
 
     def handle(self, *args, **options):

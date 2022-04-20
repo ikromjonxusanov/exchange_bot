@@ -95,6 +95,8 @@ USE_TZ = False
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'static'
+MEDIA_URL = '/uploads/'
+MEDIA_ROOT = BASE_DIR / 'uploads'
 
 TOKEN = env("BOT_TOKEN")
 PROXY_URL = 'https://api.telegram.org/bot'

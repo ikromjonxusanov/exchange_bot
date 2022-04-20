@@ -80,6 +80,7 @@ class BotUser(TimeStampedModel):
     phone = models.CharField(max_length=20, null=True, blank=True, verbose_name="Phone number")
     is_active = models.BooleanField(default=False, null=True, blank=True, verbose_name="Active")
     lang = models.CharField(max_length=2, choices=LANG, verbose_name="Language")
+    is_admin = models.BooleanField(default=False, null=True, blank=True, verbose_name="Admin")
     create_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
