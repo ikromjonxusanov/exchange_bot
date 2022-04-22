@@ -9,7 +9,7 @@ from core.bot.auth import start, uz, ru, full_name, phonenumber, set_language, u
 from core.bot.helpers import ContextData
 from core.bot.utils import setting, home, feedback, set_full_name, currency_exchange, give, get, none, course_reserve, \
     reserve, wallet, wallet_add, add_card, user_wallet_add, delete_card, delete_wallets, admin_get_data, \
-    admin_users_excel, exchange_get
+    admin_users_excel, exchange_get, exchange_from_card, exchange_to_card, enter_summa, enter_from_card, enter_to_card
 from warnings import filterwarnings
 
 filterwarnings(action="ignore", message=r".*CallbackQueryHandler")
@@ -27,6 +27,9 @@ PHONE = 3
 ALL = 4
 SET_LANG = 5
 CARD_ADD = 6
+ENTER_SUMMA = 7
+ADD_FROM_CARD = 8
+ADD_TO_CARD = 9
 
 
 class Command(BaseCommand):
@@ -57,6 +60,8 @@ class Command(BaseCommand):
             CallbackQueryHandler(delete_wallets, pattern='delete_wallets'),
             CallbackQueryHandler(admin_get_data, pattern='^(data)$'),
             CallbackQueryHandler(admin_users_excel, pattern='^(users_excel)$'),
+            CallbackQueryHandler(exchange_from_card, pattern='^(exchange_from_card)$'),
+            CallbackQueryHandler(exchange_to_card, pattern='^(exchange_to_card)$'),
             CallbackQueryHandler(exchange_get, pattern='exchange-get'),
         ]
 
@@ -83,6 +88,7 @@ class Command(BaseCommand):
                     # MessageHandler(Filters.location, location),
                 ],
                 SET_LANG: self.entry_points() + [
+                    CommandHandler('start', start),
                     MessageHandler(Filters.text, edit_full_name),
                 ],
                 CARD_ADD: [
@@ -90,8 +96,19 @@ class Command(BaseCommand):
                     MessageHandler(Filters.text, user_wallet_add),
                     CallbackQueryHandler(wallet_add, pattern='addW'),
                     CallbackQueryHandler(home, pattern="^(" + ContextData.HOME + ")$"),
+                ],
+                ENTER_SUMMA: [
+                    CommandHandler('start', start),
+                    MessageHandler(Filters.text, enter_summa),
+                ],
+                ADD_FROM_CARD: [
+                    CommandHandler('start', start),
+                    MessageHandler(Filters.text, enter_from_card),
+                ],
+                ADD_TO_CARD: [
+                    CommandHandler('start', start),
+                    MessageHandler(Filters.text, enter_to_card),
                 ]
-
             },
             fallbacks=[]
         )

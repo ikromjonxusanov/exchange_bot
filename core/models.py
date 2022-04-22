@@ -12,7 +12,6 @@ class Currency(models.Model):
     code = models.CharField(max_length=6)
     reserve = models.FloatField()
     example = models.CharField(max_length=50)
-    min_buy = models.FloatField(null=True)
     flag = models.CharField(max_length=5, default="🏳")
     is_sell = models.BooleanField(default=True)
     is_buy = models.BooleanField(default=True)
@@ -22,6 +21,17 @@ class Currency(models.Model):
 
     class Meta:
         ordering = ['id']
+
+
+class CurrencyMinBuy(models.Model):
+    from_card = models.ForeignKey(Currency, on_delete=models.CASCADE, related_name='from_card')
+    to_card = models.ForeignKey(Currency, on_delete=models.CASCADE, related_name='to_card')
+    min_buy_f = models.FloatField(null=True)
+    min_buy_t = models.FloatField(null=True)
+
+    def save(self, *args, **kwargs):
+        if not CurrencyMinBuy.objects.filter(from_card=self.from_card, to_card=self.to_card).exists():
+            super(CurrencyMinBuy, self).save(*args, **kwargs)
 
 
 class AcceptableCurrency(models.Model):
@@ -42,10 +52,16 @@ class Wallet(models.Model):
 
 
 class Exchange(models.Model):
+    STATUS = (
+        ('new', 'Yangi'),
+        ('fail', "Bekor qilingan"),
+        ("success", "Muvaffaqiyatli tugadi")
+    )
     user = models.ForeignKey(BotUser, on_delete=models.SET_NULL, null=True)
     from_card = models.CharField(max_length=50, null=True)
     to_card = models.CharField(max_length=50, null=True)
     summa = models.FloatField(default=0)
+    status = models.CharField(choices=STATUS, default='new', max_length=60)
 
 
 class Excel(models.Model):

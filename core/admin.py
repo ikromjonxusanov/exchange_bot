@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Currency, AcceptableCurrency, Wallet, Exchange, Excel
+from .models import Currency, AcceptableCurrency, Wallet, Exchange, Excel, CurrencyMinBuy
 
 
 @admin.register(Currency)
@@ -7,6 +7,13 @@ class CurrencyAdmin(admin.ModelAdmin):
     list_display = ("name", "buy", "sell", 'reserve')
     list_display_links = list_display
     search_fields = ('name',)
+
+
+@admin.register(CurrencyMinBuy)
+class CurrencyMinBuyAdmin(admin.ModelAdmin):
+    list_display = ['from_card', 'to_card', 'min_buy_f', 'min_buy_t']
+    list_display_links = ['from_card', 'to_card', 'min_buy_f', 'min_buy_t']
+    search_fields = ['from_card', 'to_card']
 
 
 @admin.register(AcceptableCurrency)
