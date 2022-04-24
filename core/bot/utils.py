@@ -211,6 +211,7 @@ def exchange_from_card(update: Update, context: CallbackContext):
     query = update.callback_query
     from_card = context.user_data['from_card']
     to_card = context.user_data['to_card']
+    context.user_data['code'] = from_card
     minbuy = CurrencyMinBuy.objects.filter(from_card=from_card, to_card=to_card).first()
     if minbuy:
         code = from_card.code
@@ -232,12 +233,13 @@ def exchange_to_card(update: Update, context: CallbackContext):
     query = update.callback_query
     from_card = context.user_data['from_card']
     to_card = context.user_data['to_card']
+    context.user_data['code'] = to_card
     minbuy = CurrencyMinBuy.objects.filter(from_card=from_card, to_card=to_card).first()
     if minbuy:
         code = to_card.code
         if to_card.code == 'UZS':
             code = 'So`m'
-        msg = f"⬇ Olish miqdorini <b>{from_card.name}</b>da kiriting:\n\n" \
+        msg = f"⬇ Olish miqdorini <b>{to_card.name}</b>da kiriting:\n\n" \
               f"Minimal:  <i>{minbuy.min_buy_t}</i> {code}\n" \
               "Bekor qilish uchun /start deb yozing."
         query.edit_message_text(msg, parse_mode="HTML")
@@ -249,32 +251,40 @@ def exchange_to_card(update: Update, context: CallbackContext):
 
 @login_user
 def enter_summa(update: Update, context: CallbackContext):
-    from_data = context.user_data['from_card']
-    minbuy = CurrencyMinBuy.objects.filter(from_card=from_data, to_card=context.user_data['to_card']).first()
+    from_card = context.user_data['from_card']
+    to_card = context.user_data['to_card']
+    minbuy = CurrencyMinBuy.objects.filter(from_card=from_card, to_card=to_card).first()
+    minbuy_value = minbuy.min_buy_f
+    card = from_card
     try:
+        if minbuy.to_card == context.user_data['code']:
+            minbuy_value = minbuy.min_buy_t
+            card = to_card
+        print(minbuy_value, minbuy, minbuy.id,
+              from_card, to_card)
         summa = float(update.message.text)
-        if minbuy.min_buy_f <= summa:
+        if minbuy_value <= summa:
             update.message.reply_html(
                 "<i>Siz to‘lov qilmoqchi bo‘lgan</i>"
-                f"\n\n<b>{from_data.name}</b> raqamni kiriting:"
-                f"\nMisol uchun: <i>({from_data.example})</i>"
+                f"\n\n<b>{from_card.name}</b> raqamni kiriting:"
+                f"\nMisol uchun: <i>({from_card.example})</i>"
             )
             context.user_data['exchange'] = {'summa': summa}
             return ADD_FROM_CARD
         else:
-            code = from_data.code
-            if from_data.code == 'UZS':
+            code = card.code
+            if card.code == 'UZS':
                 code = 'So`m'
             update.message.reply_html(
-                f"Minimal:  <i>{minbuy.min_buy_f}</i> {code}\n"
+                f"Minimal:  <i>{minbuy_value}</i> {code}\n"
                 "Bekor qilish uchun /start deb yozing."
             )
     except ValueError:
-        code = from_data.code
-        if from_data.code == 'UZS':
+        code = card.code
+        if card.code == 'UZS':
             code = 'So`m'
         update.message.reply_html(
-            f"Minimal:  <i>{minbuy.min_buy_f}</i> {code}\n"
+            f"Minimal:  <i>{minbuy_value}</i> {code}\n"
             "Bekor qilish uchun /start deb yozing."
         )
 
@@ -309,13 +319,20 @@ def enter_to_card(update: Update, context: CallbackContext):
             to_card=update.message.text,
             summa=summa
         )
-        if str(from_card.code).lower() in ("uz", "uzs"):
-            summa = "%.2f" % (float(summa) / to_card.buy)
+        if str(from_card.code).lower() in ("uz", "uzs") and context.user_data['code'] == from_card:
+            price = "%.2f" % (float(summa) / to_card.sell)
+        elif str(from_card.code).lower() in ("uz", "uzs") and context.user_data['code'] == to_card:
+            price = "%.2f" % (float(summa) * to_card.sell)
+        elif str(to_card.code).lower() in ("uz", "uzs") and context.user_data['code'] == from_card:
+            price = "%.2f" % (float(summa) * from_card.buy)
+        elif str(to_card.code).lower() in ("uz", "uzs") and context.user_data['code'] == to_card:
+            price = "%.2f" % (float(summa) / from_card.buy)
         else:
-            summa = None
+            price = None
         update.message.reply_html(
             "🔖Sizning almashuv:\n\n"
             f"🔀:{from_card} ➡️ {to_card}"
+            f"\n {summa} -> {price}"
         )
     else:
         update.message.reply_html(

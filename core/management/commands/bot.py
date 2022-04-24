@@ -12,14 +12,14 @@ from core.bot.utils import setting, home, feedback, set_full_name, currency_exch
     admin_users_excel, exchange_get, exchange_from_card, exchange_to_card, enter_summa, enter_from_card, enter_to_card
 from warnings import filterwarnings
 
-filterwarnings(action="ignore", message=r".*CallbackQueryHandler")
+# filterwarnings(action="ignore", message=r".*CallbackQueryHandler")
 
 # Enable logging
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
+# logging.basicConfig(
+#     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+# )
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 LANG = 1
 FULL_NAME = 2
@@ -35,6 +35,7 @@ ADD_TO_CARD = 9
 class Command(BaseCommand):
     help = "Telegram bot"
 
+    @property
     def entry_points(self) -> list:
         return [
             CommandHandler('start', start),
@@ -71,9 +72,9 @@ class Command(BaseCommand):
         updater = Updater(bot=bot, use_context=True)
 
         all_handler = ConversationHandler(
-            entry_points=self.entry_points(),
+            entry_points=self.entry_points,
             states={
-                LANG: self.entry_points() + [
+                LANG: self.entry_points + [
                     CallbackQueryHandler(start, pattern='start'),
                 ],
                 FULL_NAME: [
@@ -84,10 +85,10 @@ class Command(BaseCommand):
                     CommandHandler('start', start),
                     MessageHandler(Filters.contact, phonenumber)
                 ],
-                ALL: self.entry_points() + [
+                ALL: self.entry_points + [
                     # MessageHandler(Filters.location, location),
                 ],
-                SET_LANG: self.entry_points() + [
+                SET_LANG: self.entry_points + [
                     CommandHandler('start', start),
                     MessageHandler(Filters.text, edit_full_name),
                 ],
