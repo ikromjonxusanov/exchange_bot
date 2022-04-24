@@ -30,7 +30,8 @@ class CurrencyMinBuy(models.Model):
     min_buy_t = models.FloatField(null=True)
 
     def save(self, *args, **kwargs):
-        if not CurrencyMinBuy.objects.filter(from_card=self.from_card, to_card=self.to_card).exists():
+        c = CurrencyMinBuy.objects.filter(from_card=self.from_card, to_card=self.to_card).first()
+        if not c or c.id == self.id:
             super(CurrencyMinBuy, self).save(*args, **kwargs)
 
 

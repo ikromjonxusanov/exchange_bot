@@ -1,6 +1,7 @@
-import re, random as rn, datetime as d, string
-import time
-
+import re
+import random as rn
+import datetime as d
+import string
 from django.db import transaction
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.error import BadRequest
@@ -20,7 +21,6 @@ ENTER_SUMMA = 7
 ADD_FROM_CARD = 8
 ADD_TO_CARD = 9
 wallet_name = dict()
-exchange_cards = dict()
 
 
 def generate_filename():
@@ -199,7 +199,8 @@ def exchange_get(update: Update, context: CallbackContext):
         [InlineKeyboardButton(text=ButtonText(user.lang).get + to_card.name, callback_data="exchange_to_card")],
         [InlineKeyboardButton(text=ButtonText(user.lang).cancel, callback_data=ContextData.HOME)],
     ])
-    exchange_cards[str(user.tg_id)] = {"from_card": from_card, "to_card": to_card}
+    context.user_data["from_card"] = from_card
+    context.user_data["to_card"] = to_card
     query.edit_message_text(text=get_exchange_text(user.lang, from_card, to_card),
                             parse_mode="HTML",
                             reply_markup=keyboard)
@@ -208,58 +209,49 @@ def exchange_get(update: Update, context: CallbackContext):
 @login_user_query
 def exchange_from_card(update: Update, context: CallbackContext):
     query = update.callback_query
-    ex = exchange_cards.get(str(query.from_user.id), None)
-    if ex is not None:
-        from_card = ex['from_card']
-        to_card = ex['to_card']
-        minbuy = CurrencyMinBuy.objects.filter(from_card=from_card, to_card=to_card).first()
-        if minbuy:
-            code = from_card.code
-            if from_card.code == 'UZS':
-                code = 'So`m'
-            msg = f"⬆ ️Berish miqdorini <b>{from_card.name}</b>da kiriting:\n\n" \
-                  f"Minimal:  <i>{minbuy.min_buy_f}</i> {code}\n" \
-                  "Bekor qilish uchun /start deb yozing."
+    from_card = context.user_data['from_card']
+    to_card = context.user_data['to_card']
+    minbuy = CurrencyMinBuy.objects.filter(from_card=from_card, to_card=to_card).first()
+    if minbuy:
+        code = from_card.code
+        if from_card.code == 'UZS':
+            code = 'So`m'
+        msg = f"⬆ ️Berish miqdorini <b>{from_card.name}</b>da kiriting:\n\n" \
+              f"Minimal:  <i>{minbuy.min_buy_f}</i> {code}\n" \
+              "Bekor qilish uchun /start deb yozing."
 
-            query.edit_message_text(msg, parse_mode="HTML")
-            return ENTER_SUMMA
-        else:
-            query.answer(show_alert=True, text="❌ Ma'lumot to'ldirilmagan")
-            currency_exchange(update, context)
+        query.edit_message_text(msg, parse_mode="HTML")
+        return ENTER_SUMMA
+    else:
+        query.answer(show_alert=True, text="❌ Ma'lumot to'ldirilmagan")
+        currency_exchange(update, context)
 
 
 @login_user_query
 def exchange_to_card(update: Update, context: CallbackContext):
     query = update.callback_query
-    ex = exchange_cards.get(str(query.from_user.id), None)
-    if ex is not None:
-        from_card = ex['from_card']
-        to_card = ex['to_card']
-        minbuy = CurrencyMinBuy.objects.filter(from_card=from_card, to_card=to_card).first()
-        if minbuy:
-            code = to_card.code
-            if to_card.code == 'UZS':
-                code = 'So`m'
-            msg = f"⬇ Olish miqdorini <b>{from_card.name}</b>da kiriting:\n\n" \
-                  f"Minimal:  <i>{minbuy.min_buy_t}</i> {code}\n" \
-                  "Bekor qilish uchun /start deb yozing."
-            query.edit_message_text(msg, parse_mode="HTML")
-            return ENTER_SUMMA
-        else:
-            query.answer(show_alert=True, text="❌ Ma'lumot to'ldirilmagan")
-            currency_exchange(update, context)
+    from_card = context.user_data['from_card']
+    to_card = context.user_data['to_card']
+    minbuy = CurrencyMinBuy.objects.filter(from_card=from_card, to_card=to_card).first()
+    if minbuy:
+        code = to_card.code
+        if to_card.code == 'UZS':
+            code = 'So`m'
+        msg = f"⬇ Olish miqdorini <b>{from_card.name}</b>da kiriting:\n\n" \
+              f"Minimal:  <i>{minbuy.min_buy_t}</i> {code}\n" \
+              "Bekor qilish uchun /start deb yozing."
+        query.edit_message_text(msg, parse_mode="HTML")
+        return ENTER_SUMMA
+    else:
+        query.answer(show_alert=True, text="❌ Ma'lumot to'ldirilmagan")
+        currency_exchange(update, context)
 
 
 @login_user
 def enter_summa(update: Update, context: CallbackContext):
-    data = exchange_cards[str(update.message.from_user.id)]
-    from_data = data['from_card']
-    minbuy = CurrencyMinBuy.objects.filter(from_card=from_data, to_card=data['to_card']).first()
+    from_data = context.user_data['from_card']
+    minbuy = CurrencyMinBuy.objects.filter(from_card=from_data, to_card=context.user_data['to_card']).first()
     try:
-        try:
-            del data['exchange']
-        except KeyError:
-            pass
         summa = float(update.message.text)
         if minbuy.min_buy_f <= summa:
             update.message.reply_html(
@@ -267,7 +259,7 @@ def enter_summa(update: Update, context: CallbackContext):
                 f"\n\n<b>{from_data.name}</b> raqamni kiriting:"
                 f"\nMisol uchun: <i>({from_data.example})</i>"
             )
-            data['exchange'] = {'summa': summa}
+            context.user_data['exchange'] = {'summa': summa}
             return ADD_FROM_CARD
         else:
             code = from_data.code
@@ -289,16 +281,14 @@ def enter_summa(update: Update, context: CallbackContext):
 
 @login_user
 def enter_from_card(update: Update, context: CallbackContext):
-    data = exchange_cards[str(update.message.from_user.id)]
-    from_card = data['from_card']
-    to_card = data['to_card']
-    print(re.fullmatch(from_card.validate, update.message.text))
+    from_card = context.user_data['from_card']
+    to_card = context.user_data['to_card']
     if re.fullmatch(from_card.validate, update.message.text) is not None:
         update.message.reply_html(
             "<i>Siz to‘lov qilmoqchi bo‘lgan</i>"
             f"\n\n<b>{to_card.name}</b> raqamni kiriting:"
             f"\nMisol uchun: <i>({to_card.example})</i>")
-        data['exchange']['from_card'] = update.message.text
+        context.user_data['exchange']['from_card'] = update.message.text
         return ADD_TO_CARD
     else:
         update.message.reply_html(
@@ -308,20 +298,24 @@ def enter_from_card(update: Update, context: CallbackContext):
 
 @login_user
 def enter_to_card(update: Update, context: CallbackContext):
-    data = exchange_cards[str(update.message.from_user.id)]
     user = get_bot_user(update.message.from_user.id)
-    to_card = data['to_card']
+    from_card = context.user_data['from_card']
+    to_card = context.user_data['to_card']
+    summa = context.user_data['exchange']['summa']
     if re.fullmatch(to_card.validate, update.message.text) is not None:
-        ex = data['exchange']
         Exchange.objects.create(
             user=user,
-            from_card=ex['from_card'],
+            from_card=context.user_data['exchange']['from_card'],
             to_card=update.message.text,
-            summa=ex['summa']
+            summa=summa
         )
+        if str(from_card.code).lower() in ("uz", "uzs"):
+            summa = "%.2f" % (float(summa) / to_card.buy)
+        else:
+            summa = None
         update.message.reply_html(
             "🔖Sizning almashuv:\n\n"
-            f"🔀:{data['from_card']} ➡️ {to_card}"
+            f"🔀:{from_card} ➡️ {to_card}"
         )
     else:
         update.message.reply_html(
