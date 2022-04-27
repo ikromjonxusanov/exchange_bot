@@ -75,6 +75,19 @@ class Message:
         return "✏ Botda to'plangan ma'lumotlar" if self.lang == 'uz' else "✏ Данные, собранные в боте"
 
 
+def wallet_add_or_change(create: bool, lang: str) -> str:
+    if lang == 'uz':
+        if create:
+            return "➕ Qo'shish"
+        else:
+            return "✏ O'zgartirish"
+    else:
+        if create:
+            return "➕ Добавлять"
+        else:
+            return "✏ Изменить"
+
+
 class ButtonText:
     def __init__(self, lang):
         self.lang = lang
@@ -121,18 +134,6 @@ class ButtonText:
             self.give = "⬆ Отдать "
             self.get = "⬇ Получить "
 
-    def wallet_add_or_change(self, create: bool, lang: str) -> str:
-        if lang == 'uz':
-            if create:
-                return "➕ Qo'shish"
-            else:
-                return "✏ O'zgartirish"
-        else:
-            if create:
-                return "➕ Добавлять"
-            else:
-                return "✏ Изменить"
-
     @property
     def get_users_for_excel_button(self) -> str:
         return "📈 Foydalanuvchilarni ma'lumotlari" if self.lang == 'uz' else "📈 Информация о пользователе"
@@ -140,6 +141,32 @@ class ButtonText:
     @property
     def get_changes_for_excel_button(self) -> str:
         return "📈 Foydalanuvchilarni ma'lumotlari" if self.lang == 'uz' else "📈 Информация о пользователе"
+
+    @property
+    def exchange_create(self):
+        return "💸 To'lovga o'tish" if self.lang == 'uz' else "💸 Перейти к оплате"
+
+    @property
+    def exchange_save(self):
+        return "✅ O'tkazdim" if self.lang == 'uz' else "✅ Проводится"
+
+
+def exchange_create_message(lang: str, owner_card_number: str, e: Exchange) -> str:
+    if lang:
+        return f"<pre>{owner_card_number}</pre>\n👆\n" \
+               f"Almashuvingiz muvaffaqiyatli bajarilishi uchun quyidagi harakatlarni amalga oshiring:" \
+               f"Pastroqda ko‘rsatilgan miqdorni <pre>{owner_card_number}</pre>" \
+               "hamyon raqamiga o‘tkazing; <b>«O‘tkazdim»</b> tugmasini bosing; \nMiqdor: " \
+               f"<b>{e.give}</b> {e.give_code}" \
+               "Ushbu tekshiruv operator tomonidan amalga oshiriladi va o‘rtacha 5 daqiqadan 60 daqiqagacha davom etadi"
+    else:
+        return f"<pre>{owner_card_number}</pre>\n👆\n" \
+               f"Для успешной обработки вашей заявки пожалуйста выполните следующие действия:" \
+               f"Переведите указанную ниже сумму на кошелек <pre>{owner_card_number}</pre>" \
+               "Нажмите на кнопку «Проводится»; \nMiqdor: " \
+               f"<b>{e.give}</b> {e.give_code}" \
+               "Данная операция производится оператором в ручном режиме и занимает в среднем" \
+               " от от 5 минуты до 60 минут в рабочее время"
 
 
 class ContextData:

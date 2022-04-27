@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Currency, AcceptableCurrency, Wallet, Exchange, Excel, CurrencyMinBuy
+from .models import Currency, AcceptableCurrency, Wallet, Exchange, Excel, CurrencyMinBuy, OwnerCardNumber
 
 
 @admin.register(Currency)
@@ -29,7 +29,7 @@ class WalletAdmin(admin.ModelAdmin):
 
 @admin.register(Exchange)
 class ExchangeAdmin(admin.ModelAdmin):
-    list_display = ('from_card', 'to_card', 'summa')
+    list_display = ('from_card', 'to_card', 'give', 'get', 'status')
     list_display_links = list_display
 
 
@@ -41,3 +41,10 @@ class ExcelAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+
+@admin.register(OwnerCardNumber)
+class OwnerCardNumberAdmin(admin.ModelAdmin):
+    list_display = ('currency', 'number')
+    list_display_links = list_display
+    search_fields = ('number',)

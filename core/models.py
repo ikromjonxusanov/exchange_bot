@@ -61,7 +61,10 @@ class Exchange(models.Model):
     user = models.ForeignKey(BotUser, on_delete=models.SET_NULL, null=True)
     from_card = models.CharField(max_length=50, null=True)
     to_card = models.CharField(max_length=50, null=True)
-    summa = models.FloatField(default=0)
+    give = models.FloatField(default=0)
+    give_code = models.CharField(max_length=10, null=True)
+    get = models.FloatField(default=0)
+    get_code = models.CharField(max_length=10, null=True)
     status = models.CharField(choices=STATUS, default='new', max_length=60)
 
 
@@ -74,3 +77,11 @@ class Excel(models.Model):
     def delete(self, *args, **kwargs):
         os.system(f"rm -rf uploads/{self.file.name}")
         super(Excel, self).delete(*args, **kwargs)
+
+
+class OwnerCardNumber(models.Model):
+    currency = models.ForeignKey(Currency, on_delete=models.CASCADE)
+    number = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.number

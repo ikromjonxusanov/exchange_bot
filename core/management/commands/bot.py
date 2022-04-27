@@ -9,17 +9,18 @@ from core.bot.auth import start, uz, ru, full_name, phonenumber, set_language, u
 from core.bot.helpers import ContextData
 from core.bot.utils import setting, home, feedback, set_full_name, currency_exchange, give, get, none, course_reserve, \
     reserve, wallet, wallet_add, add_card, user_wallet_add, delete_card, delete_wallets, admin_get_data, \
-    admin_users_excel, exchange_get, exchange_from_card, exchange_to_card, enter_summa, enter_from_card, enter_to_card
+    admin_users_excel, exchange_get, exchange_from_card, exchange_to_card, enter_summa, enter_from_card, enter_to_card, \
+    exchange_create
 from warnings import filterwarnings
 
-# filterwarnings(action="ignore", message=r".*CallbackQueryHandler")
+filterwarnings(action="ignore", message=r".*CallbackQueryHandler")
 
 # Enable logging
-# logging.basicConfig(
-#     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-# )
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
 
-# logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 LANG = 1
 FULL_NAME = 2
@@ -64,6 +65,8 @@ class Command(BaseCommand):
             CallbackQueryHandler(exchange_from_card, pattern='^(exchange_from_card)$'),
             CallbackQueryHandler(exchange_to_card, pattern='^(exchange_to_card)$'),
             CallbackQueryHandler(exchange_get, pattern='exchange-get'),
+            CallbackQueryHandler(exchange_create, pattern='^(exchange_create)$'),
+
         ]
 
     def handle(self, *args, **options):

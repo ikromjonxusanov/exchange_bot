@@ -1,18 +1,19 @@
-import re
-import random as rn
 import datetime as d
+import random as rn
+import re
 import string
+
 from django.db import transaction
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup
 from telegram.error import BadRequest
 from telegram.ext import CallbackContext
 
 from common.service import get_user_for_excel
 from core.bot.helpers import get_bot_user, get_keyboard, Message, ContextData, ButtonText, get_text_wallet, \
-    get_exchange_text
+    get_exchange_text, wallet_add_or_change, exchange_create_message
 from core.decorators import login_user_query, login_user, admin_user_query
 from core.helpers import get_course_reserve, exchange_cancel_back_buttons, get_reserve
-from core.models import Currency, AcceptableCurrency, Wallet, Excel, CurrencyMinBuy, Exchange
+from core.models import Currency, AcceptableCurrency, Wallet, Excel, CurrencyMinBuy, Exchange, OwnerCardNumber
 
 ALL = 4
 SET_LANG = 5
@@ -264,11 +265,18 @@ def enter_summa(update: Update, context: CallbackContext):
               from_card, to_card)
         summa = float(update.message.text)
         if minbuy_value <= summa:
+            user = get_bot_user(update.effective_user.id)
+            wallet = Wallet.objects.filter(user=user, currency=from_card).first()
+            keyboard = ReplyKeyboardMarkup([])
+            if wallet:
+                keyboard = ReplyKeyboardMarkup([
+                    [wallet.number]
+                ], one_time_keyboard=True, resize_keyboard=True)
             update.message.reply_html(
                 "<i>Siz to‘lov qilmoqchi bo‘lgan</i>"
                 f"\n\n<b>{from_card.name}</b> raqamni kiriting:"
-                f"\nMisol uchun: <i>({from_card.example})</i>"
-            )
+                f"\nMisol uchun: <i>({from_card.example})</i>",
+                reply_markup=keyboard)
             context.user_data['exchange'] = {'summa': summa}
             return ADD_FROM_CARD
         else:
@@ -293,17 +301,37 @@ def enter_summa(update: Update, context: CallbackContext):
 def enter_from_card(update: Update, context: CallbackContext):
     from_card = context.user_data['from_card']
     to_card = context.user_data['to_card']
-    if re.fullmatch(from_card.validate, update.message.text) is not None:
+    try:
+        validate = re.fullmatch(from_card.validate, update.message.text)
+    except TypeError:
+        validate = True
+    if validate:
+        user = get_bot_user(update.effective_user.id)
+        wallet_number = Wallet.objects.filter(user=user, currency=to_card).first()
+        keyboard = ReplyKeyboardMarkup([])
+        if wallet_number:
+            keyboard = ReplyKeyboardMarkup([
+                [wallet_number.number]
+            ], one_time_keyboard=True, resize_keyboard=True)
         update.message.reply_html(
             "<i>Siz to‘lov qilmoqchi bo‘lgan</i>"
             f"\n\n<b>{to_card.name}</b> raqamni kiriting:"
-            f"\nMisol uchun: <i>({to_card.example})</i>")
+            f"\nMisol uchun: <i>({to_card.example})</i>",
+            reply_markup=keyboard)
         context.user_data['exchange']['from_card'] = update.message.text
         return ADD_TO_CARD
     else:
+        user = get_bot_user(update.effective_user.id)
+        wallet_number = Wallet.objects.filter(user=user, currency=from_card).first()
+        keyboard = ReplyKeyboardMarkup([])
+        if wallet_number:
+            keyboard = ReplyKeyboardMarkup([
+                [wallet_number.number]
+            ], one_time_keyboard=True, resize_keyboard=True)
         update.message.reply_html(
             f"<b>{from_card.name}</b> raqamni kiriting:"
-            f"\nMisol uchun: <i>({from_card.example})</i>")
+            f"\nMisol uchun: <i>({from_card.example})</i>",
+            reply_markup=keyboard)
 
 
 @login_user
@@ -312,32 +340,94 @@ def enter_to_card(update: Update, context: CallbackContext):
     from_card = context.user_data['from_card']
     to_card = context.user_data['to_card']
     summa = context.user_data['exchange']['summa']
-    if re.fullmatch(to_card.validate, update.message.text) is not None:
-        Exchange.objects.create(
+    minbuy = CurrencyMinBuy.objects.filter(from_card=from_card, to_card=to_card).first()
+    try:
+        validate = re.fullmatch(to_card.validate, update.message.text)
+    except TypeError:
+        validate = True
+    if validate:
+        give_price = None
+        get_price = None
+        give_code = from_card.code
+        get_code = to_card.code
+        if get_code == 'UZS':
+            get_code = 'So`m'
+        if give_code == "UZS":
+            give_code = "So`m"
+
+        if str(from_card.code).lower() in ("uz", "uzs") and context.user_data['code'] == from_card:
+            get_price = "%.2f" % (float(summa) / to_card.sell)
+            give_price = "%.2f" % float(summa)
+        elif str(from_card.code).lower() in ("uz", "uzs") and context.user_data['code'] == to_card:
+            get_price = "%.2f" % float(summa)
+            give_price = "%.2f" % (float(summa) * to_card.sell)
+        elif str(to_card.code).lower() in ("uz", "uzs") and context.user_data['code'] == from_card:
+            get_price = "%.2f" % (float(summa) * from_card.buy)
+            give_price = "%.2f" % float(summa)
+        elif str(to_card.code).lower() in ("uz", "uzs") and context.user_data['code'] == to_card:
+            get_price = "%.2f" % float(summa)
+            give_price = "%.2f" % (float(summa) / from_card.buy)
+        elif context.user_data['code'] == from_card:
+            get_price = "%.2f" % (float(summa) * (minbuy.min_buy_t / minbuy.min_buy_f))
+            give_price = "%.2f" % float(summa)
+        elif context.user_data['code'] == to_card:
+            get_price = "%.2f" % float(summa)
+            give_price = "%.2f" % (minbuy.min_buy_t / minbuy.min_buy_f * float(summa))
+        context.user_data['e'] = Exchange(
             user=user,
             from_card=context.user_data['exchange']['from_card'],
             to_card=update.message.text,
-            summa=summa
+            give=give_price,
+            give_code=give_code,
+            get=get_price,
+            get_code=get_code,
         )
-        if str(from_card.code).lower() in ("uz", "uzs") and context.user_data['code'] == from_card:
-            price = "%.2f" % (float(summa) / to_card.sell)
-        elif str(from_card.code).lower() in ("uz", "uzs") and context.user_data['code'] == to_card:
-            price = "%.2f" % (float(summa) * to_card.sell)
-        elif str(to_card.code).lower() in ("uz", "uzs") and context.user_data['code'] == from_card:
-            price = "%.2f" % (float(summa) * from_card.buy)
-        elif str(to_card.code).lower() in ("uz", "uzs") and context.user_data['code'] == to_card:
-            price = "%.2f" % (float(summa) / from_card.buy)
-        else:
-            price = None
         update.message.reply_html(
             "🔖Sizning almashuv:\n\n"
             f"🔀:{from_card} ➡️ {to_card}"
-            f"\n {summa} -> {price}"
+            f"\n⬆ {give_price} {give_code}"
+            f"\n⬇ {get_price} {get_code}"
+            f"\n{from_card.flag} {from_card.name}: {context.user_data['exchange']['from_card']}"
+            f"\n{to_card.flag} {to_card.name}: {update.message.text}",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(text=ButtonText(user.lang).exchange_create, callback_data="exchange_create")],
+                [InlineKeyboardButton(text=ButtonText(user.lang).cancel, callback_data="home")]
+            ])
         )
+        return ALL
     else:
+        wallet_number = Wallet.objects.filter(user=user, currency=to_card).first()
+        keyboard = ReplyKeyboardMarkup([])
+        if wallet_number:
+            keyboard = ReplyKeyboardMarkup([
+                [wallet_number.number]
+            ], one_time_keyboard=True, resize_keyboard=True)
         update.message.reply_html(
-            "❌"
-        )
+            f"\n\n<b>{to_card.name}</b> raqamni kiriting:"
+            f"\nMisol uchun: <i>({to_card.example})</i>",
+            reply_markup=keyboard)
+
+
+@login_user_query
+def exchange_create(update: Update, context: CallbackContext):
+    query = update.callback_query
+    user = get_bot_user(query.from_user.id)
+    e = context.user_data['e']
+
+    owner_card_number = OwnerCardNumber.objects.filter(currency=e.from_card).order_by('?').first()
+    query.edit_message_text(
+        text=exchange_create_message(user.lang, owner_card_number, e),
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton(text=ButtonText(user.lang).exchange_save, callback_data="exchange_save")],
+            [InlineKeyboardButton(text=ButtonText(user.lang).cancel, callback_data="home")]
+        ])
+    )
+
+
+@login_user_query
+def exchange_save(update: Update, context: CallbackContext):
+    query = update.callback_query
 
 
 def none(update: Update, context: CallbackContext):
@@ -398,6 +488,8 @@ def wallet(update: Update, context: CallbackContext):
         if len(tmp_b) == 2:
             keyboard.append(tmp_b)
             tmp_b = []
+    else:
+        keyboard.append(tmp_b)
     if Wallet.objects.filter(user=user).count() > 0:
         keyboard.append([
             InlineKeyboardButton(text=ButtonText(user.lang).delete, callback_data='delete_wallets'),
@@ -431,7 +523,7 @@ def wallet_add(update: Update, context: CallbackContext):
     keyboard = [
         [
             InlineKeyboardButton(
-                ButtonText(user.lang).wallet_add_or_change(not bool(w), user.lang),
+                wallet_add_or_change(not bool(w), user.lang),
                 callback_data=f'add_card/{currency.id}')
         ],
         [
