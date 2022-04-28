@@ -75,14 +75,16 @@ def full_name(update: Update, context: CallbackContext) -> int:
 
 def uz_set(update: Update, context: CallbackContext):
     query = update.callback_query
-    set_lang(lang='uz', user_id=query.from_user.id)
-    query.edit_message_text(Message("uz").HOME, parse_mode="HTML", reply_markup=get_keyboard('uz'))
+    user = get_bot_user(query.from_user.id)
+    set_lang(lang='uz', user_id=user.id)
+    query.edit_message_text(Message("uz").HOME, parse_mode="HTML", reply_markup=get_keyboard('uz', admin=user.is_admin))
 
 
 def ru_set(update: Update, context: CallbackContext):
     query = update.callback_query
-    set_lang(lang='ru', user_id=query.from_user.id)
-    query.edit_message_text(Message("ru").HOME, parse_mode="HTML", reply_markup=get_keyboard('ru'))
+    user = get_bot_user(query.from_user.id)
+    set_lang(lang='ru', user_id=user.id)
+    query.edit_message_text(Message("ru").HOME, parse_mode="HTML", reply_markup=get_keyboard('ru', admin=user.is_admin))
 
 
 def set_language(update: Update, context: CallbackContext):
