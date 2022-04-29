@@ -1,11 +1,11 @@
 from telegram import Update
 from telegram.ext import CallbackContext
-from core.bot.auth import start
+from core.bot.auth_handlers import start
 from core.bot.helpers import get_bot_user
 
 
 def login_user_query(view_func):
-    def wrapper(update: Update, context: CallbackContext):
+    def wrapper(update: Update, context: CallbackContext, *args, **kwargs):
         query = update.callback_query
         user_id = query.from_user.id
         user = get_bot_user(user_id)

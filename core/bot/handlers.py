@@ -10,10 +10,11 @@ from telegram.ext import CallbackContext
 
 from common.service import get_user_for_excel
 from core.bot.helpers import get_bot_user, get_keyboard, Message, ContextData, ButtonText, get_text_wallet, \
-    get_exchange_text, wallet_add_or_change, exchange_create_message
+    get_exchange_text, wallet_add_or_change, exchange_create_message, exchange_from_card_msg, exchange_to_card_msg, \
+    enter_min_summa_msg, get_card_code, enter_card_number_msg, enter_repeat_card_number_msg, get_exchange_doc_msg
 from core.decorators import login_user_query, login_user, admin_user_query
 from core.helpers import get_course_reserve, exchange_cancel_back_buttons, get_reserve
-from core.models import Currency, AcceptableCurrency, Wallet, Excel, CurrencyMinBuy, Exchange, OwnerCardNumber
+from core.models import Currency, AcceptableCurrency, Wallet, Excel, CurrencyMinBuy, OwnerCardNumber, Exchange
 
 ALL = 4
 SET_LANG = 5
@@ -30,10 +31,11 @@ def generate_filename():
 
 
 @login_user_query
-def home(update: Update, context: CallbackContext):
+def home(update: Update, context: CallbackContext, delete: bool = True):
     query = update.callback_query
     user = get_bot_user(query.from_user.id)
-    query.message.delete()
+    if delete:
+        query.message.delete()
     query.message.reply_html(text=Message(user.lang).HOME,
                              reply_markup=get_keyboard(user.lang, admin=user.is_admin))
     return ALL
@@ -151,7 +153,7 @@ def give(update: Update, context: CallbackContext):
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
     except BadRequest:
-        print("No edit text")
+        pass
 
 
 @login_user_query
@@ -186,7 +188,7 @@ def get(update: Update, context: CallbackContext):
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
     except BadRequest:
-        print("No edit text")
+        pass
 
 
 @login_user_query
@@ -213,15 +215,12 @@ def exchange_from_card(update: Update, context: CallbackContext):
     from_card = context.user_data['from_card']
     to_card = context.user_data['to_card']
     context.user_data['code'] = from_card
+    user = get_bot_user(query.from_user.id)
     minbuy = CurrencyMinBuy.objects.filter(from_card=from_card, to_card=to_card).first()
     if minbuy:
-        code = from_card.code
-        if from_card.code == 'UZS':
-            code = 'So`m'
-        msg = f"⬆ ️Berish miqdorini <b>{from_card.name}</b>da kiriting:\n\n" \
-              f"Minimal:  <i>{minbuy.min_buy_f}</i> {code}\n" \
-              "Bekor qilish uchun /start deb yozing."
+        code = get_card_code(from_card, user.lang)
 
+        msg = exchange_from_card_msg(from_card, minbuy, code, user.lang)
         query.edit_message_text(msg, parse_mode="HTML")
         return ENTER_SUMMA
     else:
@@ -235,14 +234,11 @@ def exchange_to_card(update: Update, context: CallbackContext):
     from_card = context.user_data['from_card']
     to_card = context.user_data['to_card']
     context.user_data['code'] = to_card
+    user = get_bot_user(query.from_user.id)
     minbuy = CurrencyMinBuy.objects.filter(from_card=from_card, to_card=to_card).first()
     if minbuy:
-        code = to_card.code
-        if to_card.code == 'UZS':
-            code = 'So`m'
-        msg = f"⬇ Olish miqdorini <b>{to_card.name}</b>da kiriting:\n\n" \
-              f"Minimal:  <i>{minbuy.min_buy_t}</i> {code}\n" \
-              "Bekor qilish uchun /start deb yozing."
+        code = get_card_code(to_card, user.lang)
+        msg = exchange_to_card_msg(to_card, minbuy, code, user.lang)
         query.edit_message_text(msg, parse_mode="HTML")
         return ENTER_SUMMA
     else:
@@ -257,43 +253,34 @@ def enter_summa(update: Update, context: CallbackContext):
     minbuy = CurrencyMinBuy.objects.filter(from_card=from_card, to_card=to_card).first()
     minbuy_value = minbuy.min_buy_f
     card = from_card
+    user = get_bot_user(update.effective_user.id)
+    code = get_card_code(card, user.lang)
+
     try:
         if minbuy.to_card == context.user_data['code']:
             minbuy_value = minbuy.min_buy_t
-            card = to_card
-        print(minbuy_value, minbuy, minbuy.id,
-              from_card, to_card)
+            code = get_card_code(to_card, user.lang)
         summa = float(update.message.text)
         if minbuy_value <= summa:
-            user = get_bot_user(update.effective_user.id)
-            wallet = Wallet.objects.filter(user=user, currency=from_card).first()
             keyboard = ReplyKeyboardMarkup([])
-            if wallet:
+            wallet_user = Wallet.objects.filter(user=user, currency=from_card).first()
+            if wallet_user:
                 keyboard = ReplyKeyboardMarkup([
-                    [wallet.number]
+                    [wallet_user.number]
                 ], one_time_keyboard=True, resize_keyboard=True)
+            msg = enter_card_number_msg(from_card, user.lang)
             update.message.reply_html(
-                "<i>Siz to‘lov qilmoqchi bo‘lgan</i>"
-                f"\n\n<b>{from_card.name}</b> raqamni kiriting:"
-                f"\nMisol uchun: <i>({from_card.example})</i>",
+                msg,
                 reply_markup=keyboard)
             context.user_data['exchange'] = {'summa': summa}
             return ADD_FROM_CARD
         else:
-            code = card.code
-            if card.code == 'UZS':
-                code = 'So`m'
             update.message.reply_html(
-                f"Minimal:  <i>{minbuy_value}</i> {code}\n"
-                "Bekor qilish uchun /start deb yozing."
+                enter_min_summa_msg(minbuy_value, code, user.lang)
             )
     except ValueError:
-        code = card.code
-        if card.code == 'UZS':
-            code = 'So`m'
         update.message.reply_html(
-            f"Minimal:  <i>{minbuy_value}</i> {code}\n"
-            "Bekor qilish uchun /start deb yozing."
+            enter_min_summa_msg(minbuy_value, code, user.lang)
         )
 
 
@@ -313,11 +300,9 @@ def enter_from_card(update: Update, context: CallbackContext):
             keyboard = ReplyKeyboardMarkup([
                 [wallet_number.number]
             ], one_time_keyboard=True, resize_keyboard=True)
-        update.message.reply_html(
-            "<i>Siz to‘lov qilmoqchi bo‘lgan</i>"
-            f"\n\n<b>{to_card.name}</b> raqamni kiriting:"
-            f"\nMisol uchun: <i>({to_card.example})</i>",
-            reply_markup=keyboard)
+        msg = enter_card_number_msg(to_card, user.lang)
+        update.message.reply_html(msg,
+                                  reply_markup=keyboard)
         context.user_data['exchange']['from_card'] = update.message.text
         return ADD_TO_CARD
     else:
@@ -329,8 +314,7 @@ def enter_from_card(update: Update, context: CallbackContext):
                 [wallet_number.number]
             ], one_time_keyboard=True, resize_keyboard=True)
         update.message.reply_html(
-            f"<b>{from_card.name}</b> raqamni kiriting:"
-            f"\nMisol uchun: <i>({from_card.example})</i>",
+            enter_repeat_card_number_msg(from_card, user.lang),
             reply_markup=keyboard)
 
 
@@ -348,13 +332,8 @@ def enter_to_card(update: Update, context: CallbackContext):
     if validate:
         give_price = None
         get_price = None
-        give_code = from_card.code
-        get_code = to_card.code
-        if get_code == 'UZS':
-            get_code = 'So`m'
-        if give_code == "UZS":
-            give_code = "So`m"
-
+        give_code = get_card_code(from_card, user.lang)
+        get_code = get_card_code(to_card, user.lang)
         if str(from_card.code).lower() in ("uz", "uzs") and context.user_data['code'] == from_card:
             get_price = "%.2f" % (float(summa) / to_card.sell)
             give_price = "%.2f" % float(summa)
@@ -373,24 +352,27 @@ def enter_to_card(update: Update, context: CallbackContext):
         elif context.user_data['code'] == to_card:
             get_price = "%.2f" % float(summa)
             give_price = "%.2f" % (minbuy.min_buy_t / minbuy.min_buy_f * float(summa))
-        context.user_data['e'] = Exchange(
-            user=user,
-            from_card=context.user_data['exchange']['from_card'],
-            to_card=update.message.text,
-            give=give_price,
-            give_code=give_code,
-            get=get_price,
-            get_code=get_code,
-        )
+        context.user_data['e'] = {
+            "user": user,
+            "from_card": from_card,
+            "to_card": to_card,
+            "from_number": context.user_data['exchange']['from_card'],
+            "to_number": update.message.text,
+            "give": give_price,
+            "give_code": give_code,
+            "get": get_price,
+            "get_code": get_code
+        }
+        msg = "🔖Sizning almashuv:" if user.lang == 'uz' else "🔖Ваша заявка"
         update.message.reply_html(
-            "🔖Sizning almashuv:\n\n"
-            f"🔀:{from_card} ➡️ {to_card}"
+            f"{msg}\n\n🔀:{from_card} ➡️ {to_card}"
             f"\n⬆ {give_price} {give_code}"
             f"\n⬇ {get_price} {get_code}"
             f"\n{from_card.flag} {from_card.name}: {context.user_data['exchange']['from_card']}"
             f"\n{to_card.flag} {to_card.name}: {update.message.text}",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton(text=ButtonText(user.lang).exchange_create, callback_data="exchange_create")],
+                [InlineKeyboardButton(text=ButtonText(user.lang).exchange_create + "123",
+                                      callback_data="exchange_create")],
                 [InlineKeyboardButton(text=ButtonText(user.lang).cancel, callback_data="home")]
             ])
         )
@@ -403,8 +385,7 @@ def enter_to_card(update: Update, context: CallbackContext):
                 [wallet_number.number]
             ], one_time_keyboard=True, resize_keyboard=True)
         update.message.reply_html(
-            f"\n\n<b>{to_card.name}</b> raqamni kiriting:"
-            f"\nMisol uchun: <i>({to_card.example})</i>",
+            enter_repeat_card_number_msg(to_card, user.lang),
             reply_markup=keyboard)
 
 
@@ -412,27 +393,39 @@ def enter_to_card(update: Update, context: CallbackContext):
 def exchange_create(update: Update, context: CallbackContext):
     query = update.callback_query
     user = get_bot_user(query.from_user.id)
-    e = context.user_data['e']
-
-    owner_card_number = OwnerCardNumber.objects.filter(currency=e.from_card).order_by('?').first()
-    query.edit_message_text(
-        text=exchange_create_message(user.lang, owner_card_number, e),
-        parse_mode="HTML",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton(text=ButtonText(user.lang).exchange_save, callback_data="exchange_save")],
-            [InlineKeyboardButton(text=ButtonText(user.lang).cancel, callback_data="home")]
-        ])
-    )
+    try:
+        e = context.user_data['e']
+        owner_card_number = OwnerCardNumber.objects.order_by('?').filter(
+            currency=context.user_data['from_card']).first()
+        query.edit_message_text(
+            text=exchange_create_message(user.lang, owner_card_number, e),
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(text=ButtonText(user.lang).exchange_save, callback_data="exchange_save")],
+                [InlineKeyboardButton(text=ButtonText(user.lang).cancel, callback_data="home")]
+            ])
+        )
+    except KeyError:
+        query.answer(show_alert=True, text="⌛ Vaqtingiz o'tib ketdi" if user.lang == 'uz' else "⌛ Ваше время вышло")
+        home(update, context)
 
 
 @login_user_query
 def exchange_save(update: Update, context: CallbackContext):
     query = update.callback_query
+    user = get_bot_user(query.from_user.id)
+    exchange = Exchange.objects.create(**context.user_data['e'])
+    msg = get_exchange_doc_msg(exchange, user.lang,
+                               context.user_data['from_card'], context.user_data['to_card'])
+    query.edit_message_text("⏳")
+    query.message.reply_html(
+        msg
+    )
+    home(update, context, delete=False)
 
 
 def none(update: Update, context: CallbackContext):
     query = update.callback_query
-    query.answer(show_alert=True, text="🛑 None")
 
 
 @login_user_query
@@ -601,7 +594,11 @@ def user_wallet_add(update: Update, context: CallbackContext):
     if data is not None:
         cid = data['cid']
         currency = Currency.objects.get(id=cid)
-        if re.fullmatch(currency.validate, number):
+        validate = True
+        if currency.validate:
+            if not re.fullmatch(currency.validate, number):
+                validate = False
+        if validate:
             with transaction.atomic():
                 w, _ = Wallet.objects.get_or_create(user=user, currency=currency)
                 w.number = number
@@ -614,7 +611,7 @@ def user_wallet_add(update: Update, context: CallbackContext):
                         InlineKeyboardButton(ButtonText(user.lang).back_home, callback_data=ContextData.HOME)
                     ]
                 ])
-                update.message.reply_html("✅ Kartani saqlandi",
+                update.message.reply_html("✅ Kartani saqlandi" if user.lang == 'uz' else "✅ Карта сохранена",
                                           reply_markup=keyboard)
                 return ALL
         else:
@@ -633,7 +630,7 @@ def admin_get_data(update: Update, context: CallbackContext):
         ],
         [
             InlineKeyboardButton(
-                text=ButtonText(user.lang).get_changes_for_excel_button, callback_data='none'
+                text=ButtonText(user.lang).get_changes_for_excel_button, callback_data='exchanges_excel'
             )
         ],
         [
@@ -668,6 +665,47 @@ def admin_users_excel(update: Update, context: CallbackContext):
         query.message.reply_document(
             document=open("uploads/" + str(excel.file), 'rb'),
             filename="Customers.xlsx",
+            reply_markup=InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton(text=ButtonText(user.lang).back_home, callback_data=ContextData.HOME)
+                ]
+            ])
+        )
+        query.message.delete()
+    except FileNotFoundError:
+        query.edit_message_text(
+            text=Message(user.lang).get_data_excel_error,
+            reply_markup=InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton(text="👨🏻‍💻 Dasturchiga murojaat qilish",
+                                         url="https://t.me/ikromjonxusanov"),
+                ],
+                [
+                    InlineKeyboardButton(text=ButtonText(user.lang).back_home, callback_data=ContextData.HOME)
+                ]
+            ])
+        )
+
+
+@admin_user_query
+def admin_exchanges_excel(update: Update, context: CallbackContext):
+    query = update.callback_query
+    user = get_bot_user(query.from_user.id)
+    query.edit_message_text(
+        text="⏳ Ma'lumotlar <b>excel</b> formatga o'tkazilmoqda iltimos kuting!",
+        parse_mode='HTML'
+    )
+    excel = Excel(
+        name=f'Exchanges get data for excel message id -> {query.message.message_id}',
+        from_user=user
+    )
+    file = get_user_for_excel(generate_filename())
+    excel.file = file
+    excel.save()
+    try:
+        query.message.reply_document(
+            document=open("uploads/" + str(excel.file), 'rb'),
+            filename="Exchanges.xlsx",
             reply_markup=InlineKeyboardMarkup([
                 [
                     InlineKeyboardButton(text=ButtonText(user.lang).back_home, callback_data=ContextData.HOME)

@@ -32,66 +32,6 @@
     "reserve": 100000
   },
   {
-    "name": "Payeer RUB",
-    "buy": 120,
-    "sell": 136,
-    "validate": "^p[0-9]{8}$",
-    "example": "P12345678",
-    "min_buy": 834,
-    "is_sell": true,
-    "is_buy": true,
-    "code": "RUB",
-    "reserve": 100000
-  },
-  {
-    "name": "Payeer USD",
-    "buy": 11000,
-    "sell": 11500,
-    "validate": "^p[0-9]{8}$",
-    "example": "P12345678",
-    "min_buy": 10,
-    "is_sell": true,
-    "is_buy": true,
-    "code": "USD",
-    "reserve": 10000
-  },
-  {
-    "name": "WMZ",
-    "buy": 11000,
-    "sell": 11500,
-    "validate": "^z[0-9]{12}$",
-    "example": "Z123456789000",
-    "min_buy": 10,
-    "is_sell": true,
-    "is_buy": true,
-    "code": "WMZ",
-    "reserve": 10000
-  },
-  {
-    "name": "Advcash",
-    "buy": 11000,
-    "sell": 11500,
-    "validate": "",
-    "example": "",
-    "min_buy": 10,
-    "is_sell": true,
-    "is_buy": true,
-    "code": "USD",
-    "reserve": 10000
-  },
-  {
-    "name": "BUSD BEP20",
-    "buy": 11000,
-    "sell": 11500,
-    "validate": "^[0-9a-z]{42}$",
-    "example": "0xa9df4af5a75616de27bb826d5b36b62c81a7e50e",
-    "min_buy": 10,
-    "is_sell": true,
-    "is_buy": true,
-    "code": "USD",
-    "reserve": 10000
-  },
-  {
     "name": "USDT TRC20",
     "buy": 11000,
     "sell": 11500,

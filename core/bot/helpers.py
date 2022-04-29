@@ -3,7 +3,7 @@ from datetime import datetime
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from account.models import BotUser
-from core.models import Exchange, Currency, Wallet
+from core.models import Exchange, Currency, Wallet, CurrencyMinBuy
 
 
 def get_feedback(lang):
@@ -151,20 +151,20 @@ class ButtonText:
         return "✅ O'tkazdim" if self.lang == 'uz' else "✅ Проводится"
 
 
-def exchange_create_message(lang: str, owner_card_number: str, e: Exchange) -> str:
-    if lang:
+def exchange_create_message(lang: str, owner_card_number: str, e: dict) -> str:
+    if lang == 'uz':
         return f"<pre>{owner_card_number}</pre>\n👆\n" \
                f"Almashuvingiz muvaffaqiyatli bajarilishi uchun quyidagi harakatlarni amalga oshiring:" \
                f"Pastroqda ko‘rsatilgan miqdorni <pre>{owner_card_number}</pre>" \
                "hamyon raqamiga o‘tkazing; <b>«O‘tkazdim»</b> tugmasini bosing; \nMiqdor: " \
-               f"<b>{e.give}</b> {e.give_code}" \
+               f"<b>{e['give']}</b> {e['give_code']}" \
                "Ushbu tekshiruv operator tomonidan amalga oshiriladi va o‘rtacha 5 daqiqadan 60 daqiqagacha davom etadi"
     else:
         return f"<pre>{owner_card_number}</pre>\n👆\n" \
                f"Для успешной обработки вашей заявки пожалуйста выполните следующие действия:" \
                f"Переведите указанную ниже сумму на кошелек <pre>{owner_card_number}</pre>" \
                "Нажмите на кнопку «Проводится»; \nMiqdor: " \
-               f"<b>{e.give}</b> {e.give_code}" \
+               f"<b>{e['give']}</b> {e['give_code']}" \
                "Данная операция производится оператором в ручном режиме и занимает в среднем" \
                " от от 5 минуты до 60 минут в рабочее время"
 
@@ -223,11 +223,92 @@ def get_exchange_text(lang: str, from_card: Currency, to_card: Currency) -> str:
             datetime.now()
         )
     else:
-        return "⬆️<b>Отдаете</b>: <i>{}</i>\n⬇️<b>Получаете</b>: <i>{}</i>\n🕗<b>Sana</b>: {:%d.%m.%Y}".format(
+        return "⬆️<b>Отдаете</b>: <i>{}</i>\n⬇️<b>Получаете</b>: <i>{}</i>\n🕗<b>Дата создания</b>: {:%d.%m.%Y}".format(
             from_card.name,
             to_card.name,
             datetime.now()
         )
 
+
 # ⬆️Отдать
 # ⬇️Получить
+def exchange_from_card_msg(from_card, minbuy: CurrencyMinBuy, code: str, lang: str) -> str:
+    if lang == 'uz':
+        return f"⬆ ️Berish miqdorini <b>{from_card.name}</b>da kiriting:\n\n" \
+               f"Minimal:  <i>{minbuy.min_buy_f}</i> {code}\n" \
+               "Bekor qilish uchun /start deb yozing."
+    else:
+        return f"⬆️Введите сумму отдачи в <b> {from_card.name} </b>: \n\n" \
+               f"Минимум: <i> {minbuy.min_buy_f} </i> {code}\n" \
+               "Для отмены напишите /start"
+
+
+def exchange_to_card_msg(to_card: Currency, minbuy: CurrencyMinBuy, code: str, lang: str) -> str:
+    if lang == 'uz':
+        return f"⬇ Olish miqdorini <b>{to_card.name}</b>da kiriting:\n\n" \
+               f"Minimal:  <i>{minbuy.min_buy_t}</i> {code}\n" \
+               "Bekor qilish uchun /start deb yozing."
+    else:
+        return f"⬇ Введите сумму получения в <b> {to_card.name} </b>: \n\n" \
+               f"Минимум: <i> {minbuy.min_buy_t} </i> {code}\n" \
+               "Для отмены напишите /start"
+
+
+def enter_card_number_msg(card: Currency, lang: str) -> str:
+    if lang == "uz":
+        return "<i>Siz to‘lov qilmoqchi bo‘lgan</i>" \
+               f"\n\n<b>{card.name}</b> raqamni kiriting:" \
+               f"\nMisol uchun: (<i>{card.example}</i>)"
+    else:
+        return f"Введите номер <b>{card.name}</b> счёта:" \
+               "\nС которого хотите совершить оплату." \
+               f"\nНапример: (<i>{card.example}</i>)"
+
+
+def enter_repeat_card_number_msg(card: Currency, lang: str) -> str:
+    if lang == "uz":
+        return f"{card.name} hamyon formati noto'g'ri"
+    else:
+        return f"Неверный формат {card.name} кошелька"
+
+
+def enter_min_summa_msg(minbuy_value: float, code: str, lang: str) -> str:
+    if lang == "uz":
+        return f"Minimal:  <i>{minbuy_value}</i> {code}\n" \
+               "Bekor qilish uchun /start deb yozing."
+    else:
+        return f"Минимум: <i> {minbuy_value} </i> {code}\n" \
+               "Для отмены напишите /start"
+
+
+def get_card_code(card: Currency, lang: str) -> str:
+    code = card.code
+    if card.code == 'UZS':
+        code = 'So`m'
+        if lang == 'ru':
+            code = "СУМ"
+    return code
+
+
+def get_exchange_doc_msg(exchange: Exchange, lang: str, from_card, to_card) -> str:
+    date = "{:%d.%m.%Y %H:%M}".format(datetime.now())
+    if lang == "uz":
+        return (f"🆔 Almashuv: {exchange.id}"
+                f"\n🔀:{from_card} ➡️ {to_card}"
+                f"\n{from_card.flag}{from_card}: {exchange.from_card}"
+                f"\n💸: {exchange.give} {exchange.give_code}"
+                f"\n{to_card.flag}{to_card}: {exchange.to_card}"
+                f"\n💰: {exchange.get} {exchange.get_code}"
+                f"\n📌To‘lov: Tekshiruvda."
+                f"\n📆O‘tkazma sanasi: {date}"
+                )
+    else:
+        return (f"🆔 Заявка: {exchange.id}"
+                f"\n🔀:{from_card} ➡️ {to_card}"
+                f"\n{from_card}: {exchange.from_card}"
+                f"\n💸: {exchange.give} {exchange.give_code}"
+                f"\n{to_card}: {exchange.to_card}"
+                f"\n: {exchange.get} {exchange.get_code}"
+                f"\n📌 Статус оплаты: В обработке."
+                f"\n📆Дата заявки: {date}"
+                )

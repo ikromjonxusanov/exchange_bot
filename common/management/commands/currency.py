@@ -19,7 +19,6 @@ class Command(BaseCommand):
                     name=d.get("name"),
                     validate=d.get("validate"),
                     example=d.get("example"),
-                    min_buy=d.get("min_buy"),
                     is_sell=d.get("is_sell"),
                     is_buy=d.get("is_buy"),
                     reserve=d.get("reserve"),
