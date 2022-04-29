@@ -136,11 +136,11 @@ class ButtonText:
 
     @property
     def get_users_for_excel_button(self) -> str:
-        return "📈 Foydalanuvchilarni ma'lumotlari" if self.lang == 'uz' else "📈 Информация о пользователе"
+        return "📈 Foydalanuvchilar ma'lumotlari" if self.lang == 'uz' else "📈 информация о пользователе"
 
     @property
     def get_changes_for_excel_button(self) -> str:
-        return "📈 Foydalanuvchilarni ma'lumotlari" if self.lang == 'uz' else "📈 Информация о пользователе"
+        return "💱 O'tkazmalar ma'lumotlari" if self.lang == 'uz' else "💱 Информация о переносе"
 
     @property
     def exchange_create(self):
@@ -295,9 +295,9 @@ def get_exchange_doc_msg(exchange: Exchange, lang: str, from_card, to_card) -> s
     if lang == "uz":
         return (f"🆔 Almashuv: {exchange.id}"
                 f"\n🔀:{from_card} ➡️ {to_card}"
-                f"\n{from_card.flag}{from_card}: {exchange.from_card}"
+                f"\n{from_card.flag}{from_card}: {exchange.from_number}"
                 f"\n💸: {exchange.give} {exchange.give_code}"
-                f"\n{to_card.flag}{to_card}: {exchange.to_card}"
+                f"\n{to_card.flag}{to_card}: {exchange.to_number}"
                 f"\n💰: {exchange.get} {exchange.get_code}"
                 f"\n📌To‘lov: Tekshiruvda."
                 f"\n📆O‘tkazma sanasi: {date}"

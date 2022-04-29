@@ -27,10 +27,10 @@ class WalletAdmin(admin.ModelAdmin):
     list_display_links = list_display
 
 
-# @admin.register(Exchange)
-# class ExchangeAdmin(admin.ModelAdmin):
-#     list_display = ('from_card_number', 'to_card_number', 'give', 'get', 'status')
-#     list_display_links = list_display
+@admin.register(Exchange)
+class ExchangeAdmin(admin.ModelAdmin):
+    list_display = ('from_number', 'to_number', 'give', 'get', 'status')
+    list_display_links = list_display
 
 
 @admin.register(Excel)

@@ -86,7 +86,7 @@ class BotUser(TimeStampedModel):
 
     def __str__(self) -> str:
         if self.phone is not None:
-            return str(self.phone)
+            return self.phone
         return str(self.tg_id)
 
     class Meta:

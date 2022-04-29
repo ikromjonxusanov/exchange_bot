@@ -11,7 +11,7 @@ from core.bot.handlers import setting, home, feedback, set_full_name, currency_e
     course_reserve, \
     reserve, wallet, wallet_add, add_card, user_wallet_add, delete_card, delete_wallets, admin_get_data, \
     admin_users_excel, exchange_get, exchange_from_card, exchange_to_card, enter_summa, enter_from_card, enter_to_card, \
-    exchange_create, exchange_save
+    exchange_create, exchange_save, admin_exchanges_excel
 from warnings import filterwarnings
 
 filterwarnings(action="ignore", message=r".*CallbackQueryHandler")
@@ -63,6 +63,7 @@ class Command(BaseCommand):
             CallbackQueryHandler(delete_wallets, pattern='delete_wallets'),
             CallbackQueryHandler(admin_get_data, pattern='^(data)$'),
             CallbackQueryHandler(admin_users_excel, pattern='^(users_excel)$'),
+            CallbackQueryHandler(admin_exchanges_excel, pattern='^(exchanges_excel)$'),
             CallbackQueryHandler(exchange_from_card, pattern='^(exchange_from_card)$'),
             CallbackQueryHandler(exchange_to_card, pattern='^(exchange_to_card)$'),
             CallbackQueryHandler(exchange_get, pattern='exchange-get'),

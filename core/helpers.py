@@ -20,7 +20,7 @@ def get_course_reserve(lang):
         data += f"\n1 {b.name} = <b>{b.buy}</b> {code}"
     data += f"\n\n{sell}"
     for s in sell_currencies:
-        data += f"\n1 {s.name} = <b>{s.buy}</b> {code}"
+        data += f"\n1 {s.name} = <b>{s.sell}</b> {code}"
     return data
 
 

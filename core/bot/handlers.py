@@ -8,7 +8,7 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKe
 from telegram.error import BadRequest
 from telegram.ext import CallbackContext
 
-from common.service import get_user_for_excel
+from common.service import get_user_for_excel, get_exchange_for_excel
 from core.bot.helpers import get_bot_user, get_keyboard, Message, ContextData, ButtonText, get_text_wallet, \
     get_exchange_text, wallet_add_or_change, exchange_create_message, exchange_from_card_msg, exchange_to_card_msg, \
     enter_min_summa_msg, get_card_code, enter_card_number_msg, enter_repeat_card_number_msg, get_exchange_doc_msg
@@ -371,7 +371,7 @@ def enter_to_card(update: Update, context: CallbackContext):
             f"\n{from_card.flag} {from_card.name}: {context.user_data['exchange']['from_card']}"
             f"\n{to_card.flag} {to_card.name}: {update.message.text}",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton(text=ButtonText(user.lang).exchange_create + "123",
+                [InlineKeyboardButton(text=ButtonText(user.lang).exchange_create,
                                       callback_data="exchange_create")],
                 [InlineKeyboardButton(text=ButtonText(user.lang).cancel, callback_data="home")]
             ])
@@ -421,6 +421,8 @@ def exchange_save(update: Update, context: CallbackContext):
     query.message.reply_html(
         msg
     )
+    context.bot.send_message(chat_id="@change_bot_test_chat", parse_mode="html", text=msg)
+    context.bot.send_message(chat_id="-779642309", parse_mode="html", text=msg)
     home(update, context, delete=False)
 
 
@@ -699,7 +701,7 @@ def admin_exchanges_excel(update: Update, context: CallbackContext):
         name=f'Exchanges get data for excel message id -> {query.message.message_id}',
         from_user=user
     )
-    file = get_user_for_excel(generate_filename())
+    file = get_exchange_for_excel(generate_filename())
     excel.file = file
     excel.save()
     try:
@@ -713,7 +715,7 @@ def admin_exchanges_excel(update: Update, context: CallbackContext):
             ])
         )
         query.message.delete()
-    except FileNotFoundError:
+    except FileNotFoundError or ValueError:
         query.edit_message_text(
             text=Message(user.lang).get_data_excel_error,
             reply_markup=InlineKeyboardMarkup([

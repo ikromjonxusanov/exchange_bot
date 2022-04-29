@@ -54,7 +54,7 @@ class Wallet(models.Model):
 
 class Exchange(models.Model):
     STATUS = (
-        ('new', 'Yangi'),
+        ('being check', 'Tekshiruvda'),
         ('fail', "Bekor qilingan"),
         ("success", "Muvaffaqiyatli tugadi")
     )
