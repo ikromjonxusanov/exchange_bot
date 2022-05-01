@@ -1,16 +1,12 @@
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, \
     ReplyKeyboardRemove
 from telegram.ext import CallbackContext
-from core.bot.helpers import get_bot_user, get_keyboard, Message
-
-LANG = 1
-FULL_NAME = 2
-PHONE = 3
-ALL = 4
+from core.helpers.variables import get_bot_user, Message
+from core.helpers.keyboards import get_keyboard
+from core.states import FULL_NAME, PHONE, ALL, LANG
 
 
 def start(update: Update, context: CallbackContext, pk=None):
-    # print(update.message)
     if pk is None:
         user_id = update.message.from_user.id
     else:

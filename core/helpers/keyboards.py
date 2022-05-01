@@ -1,6 +1,6 @@
-from core.bot.helpers import ButtonText, ContextData, Message
+from core.helpers.variables import ButtonText, ContextData, Message
 from core.models import Currency
-from telegram import InlineKeyboardButton
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 
 def get_course_reserve(lang):
@@ -41,3 +41,23 @@ def exchange_cancel_back_buttons(lang):
         [InlineKeyboardButton(text=ButtonText(lang).cancel, callback_data=ContextData.EXCHANGE)],
         [InlineKeyboardButton(text=ButtonText(lang).back, callback_data=ContextData.HOME)]
     ]
+
+
+def get_keyboard(lang, admin: bool = False):
+    buttons = [
+        [
+            InlineKeyboardButton(ButtonText(lang).currency_exchange, callback_data=ContextData.EXCHANGE),
+            InlineKeyboardButton(ButtonText(lang).wallet, callback_data=ContextData.WALLET),
+        ],
+        [
+            InlineKeyboardButton(ButtonText(lang).exchanges, callback_data='none'),
+            InlineKeyboardButton(ButtonText(lang).course_reserve, callback_data='course_reserve')
+        ],
+        [
+            InlineKeyboardButton(ButtonText(lang).settings, callback_data=ContextData.SETTINGS),
+            InlineKeyboardButton(ButtonText(lang).feedback, callback_data=ContextData.FEEDBACK)
+        ],
+    ]
+    if admin:
+        buttons.append([InlineKeyboardButton(ButtonText(lang).data, callback_data='data')])
+    return InlineKeyboardMarkup(buttons)

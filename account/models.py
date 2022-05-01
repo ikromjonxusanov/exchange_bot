@@ -76,10 +76,10 @@ class BotUser(TimeStampedModel):
     )
 
     tg_id = models.PositiveBigIntegerField(unique=True, verbose_name="ID")
-    full_name = models.CharField(max_length=255, null=True, blank=True, verbose_name="Full name")
-    phone = models.CharField(max_length=20, null=True, blank=True, verbose_name="Phone number")
-    is_active = models.BooleanField(default=False, null=True, blank=True, verbose_name="Active")
-    lang = models.CharField(max_length=2, choices=LANG, verbose_name="Language")
+    full_name = models.CharField(max_length=255, null=True, blank=True, verbose_name="F.I.SH")
+    phone = models.CharField(max_length=20, null=True, blank=True, verbose_name="Telefon nomer")
+    is_active = models.BooleanField(default=False, null=True, blank=True, verbose_name="Faol")
+    lang = models.CharField(max_length=2, choices=LANG, verbose_name="Til")
     is_admin = models.BooleanField(default=False, null=True, blank=True, verbose_name="Admin")
     create_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -90,5 +90,5 @@ class BotUser(TimeStampedModel):
         return str(self.tg_id)
 
     class Meta:
-        verbose_name = "Bot Customer"
-        verbose_name_plural = "Bot Customers"
+        verbose_name = "Foydalanuvchi"
+        verbose_name_plural = "Foydalanuvchilar"

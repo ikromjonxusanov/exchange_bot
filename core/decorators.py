@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import CallbackContext
-from core.bot.auth_handlers import start
-from core.bot.helpers import get_bot_user
+from core.handlers.auth import start
+from core.helpers.variables import get_bot_user
 
 
 def login_user_query(view_func):

@@ -1,7 +1,5 @@
 from datetime import datetime
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-
 from account.models import BotUser
 from core.models import Exchange, Currency, Wallet, CurrencyMinBuy
 
@@ -181,26 +179,6 @@ class ContextData:
 ContextData = ContextData()
 
 
-def get_keyboard(lang, admin: bool = False):
-    buttons = [
-        [
-            InlineKeyboardButton(ButtonText(lang).currency_exchange, callback_data=ContextData.EXCHANGE),
-            InlineKeyboardButton(ButtonText(lang).wallet, callback_data=ContextData.WALLET),
-        ],
-        [
-            InlineKeyboardButton(ButtonText(lang).exchanges, callback_data='none'),
-            InlineKeyboardButton(ButtonText(lang).course_reserve, callback_data='course_reserve')
-        ],
-        [
-            InlineKeyboardButton(ButtonText(lang).settings, callback_data=ContextData.SETTINGS),
-            InlineKeyboardButton(ButtonText(lang).feedback, callback_data=ContextData.FEEDBACK)
-        ],
-    ]
-    if admin:
-        buttons.append([InlineKeyboardButton(ButtonText(lang).data, callback_data='data')])
-    return InlineKeyboardMarkup(buttons)
-
-
 def get_bot_user(tg_id=None):
     return BotUser.objects.get_or_create(tg_id=tg_id)[0]
 
@@ -230,8 +208,6 @@ def get_exchange_text(lang: str, from_card: Currency, to_card: Currency) -> str:
         )
 
 
-# ⬆️Отдать
-# ⬇️Получить
 def exchange_from_card_msg(from_card, minbuy: CurrencyMinBuy, code: str, lang: str) -> str:
     if lang == 'uz':
         return f"⬆ ️Berish miqdorini <b>{from_card.name}</b>da kiriting:\n\n" \
