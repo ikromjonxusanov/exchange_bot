@@ -6,6 +6,7 @@ from telegram.ext import CallbackContext
 
 from core.decorators import login_user, login_user_query
 from core.handlers.core import home
+from core.helpers.keyboards import wallet_add_keyboard
 from core.helpers.variables import get_bot_user, ButtonText, ContextData, get_text_wallet, Message, wallet_add_or_change
 from core.models import Currency, Wallet
 from core.states import ALL, CARD_ADD
@@ -112,7 +113,10 @@ def add_card(update: Update, context: CallbackContext):
         }
         return CARD_ADD
     except Currency.DoesNotExist:
-        query.answer("🛑 Tanlanga valyuta mavjud emas iltimos /start bering va qaytadan ishlating")
+        txt = ("🛑 Tanlanga valyuta mavjud emas iltimos /start bering va qaytadan ishlating"
+               if user.lang == 'uz' else
+               "🛑 Выбранная валюта недоступна Пожалуйста, дайте /start и используйте снова")
+        query.answer(show_alert=True, text=txt)
 
 
 @login_user_query
@@ -148,16 +152,10 @@ def user_wallet_add(update: Update, context: CallbackContext):
                 w, _ = Wallet.objects.get_or_create(user=user, currency=currency)
                 w.number = number
                 w.save()
-                keyboard = InlineKeyboardMarkup([
-                    [
-                        InlineKeyboardButton(ButtonText(user.lang).wallet, callback_data=ContextData.WALLET)
-                    ],
-                    [
-                        InlineKeyboardButton(ButtonText(user.lang).back_home, callback_data=ContextData.HOME)
-                    ]
-                ])
+                keyboard = wallet_add_keyboard(user.lang)
                 update.message.reply_html("✅ Kartani saqlandi" if user.lang == 'uz' else "✅ Карта сохранена",
                                           reply_markup=keyboard)
                 return ALL
         else:
-            update.message.reply_html(f"<pre>{currency.example}</pre>\nquyidagicha kiriting")
+            txt = "Quyidagi tarzda kiriting" if user.lang == 'uz' else "Введите следующим образом"
+            update.message.reply_html(f"<pre>{currency.example}</pre>\n" + txt)

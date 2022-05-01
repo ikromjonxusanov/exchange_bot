@@ -2,12 +2,13 @@ import datetime
 import random
 import string
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update
 from telegram.ext import CallbackContext
 
 from common.service import get_user_for_excel, get_exchange_for_excel
 from core.decorators import admin_user_query
-from core.helpers.variables import get_bot_user, ButtonText, Message, ContextData
+from core.helpers.keyboards import admin_data, back_keyboard, error_keyboard
+from core.helpers.variables import get_bot_user, Message
 from core.models import Excel
 
 
@@ -20,27 +21,11 @@ def generate_filename():
 def admin_get_data(update: Update, context: CallbackContext):
     query = update.callback_query
     user = get_bot_user(query.from_user.id)
-    keyboard = [
-        [
-            InlineKeyboardButton(
-                text=ButtonText(user.lang).get_users_for_excel_button, callback_data='users_excel'
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text=ButtonText(user.lang).get_changes_for_excel_button, callback_data='exchanges_excel'
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text=ButtonText(user.lang).back_home, callback_data=ContextData.HOME
-            )
-        ]
-    ]
+    keyboard = admin_data(user.lang)
     query.edit_message_text(
         text=Message(user.lang).data_excel,
         parse_mode="HTML",
-        reply_markup=InlineKeyboardMarkup(keyboard)
+        reply_markup=keyboard
     )
 
 
@@ -63,25 +48,13 @@ def admin_users_excel(update: Update, context: CallbackContext):
         query.message.reply_document(
             document=open("uploads/" + str(excel.file), 'rb'),
             filename="Customers.xlsx",
-            reply_markup=InlineKeyboardMarkup([
-                [
-                    InlineKeyboardButton(text=ButtonText(user.lang).back_home, callback_data=ContextData.HOME)
-                ]
-            ])
+            reply_markup=back_keyboard(user.lang)
         )
         query.message.delete()
     except FileNotFoundError:
         query.edit_message_text(
             text=Message(user.lang).get_data_excel_error,
-            reply_markup=InlineKeyboardMarkup([
-                [
-                    InlineKeyboardButton(text="👨🏻‍💻 Dasturchiga murojaat qilish",
-                                         url="https://t.me/ikromjonxusanov"),
-                ],
-                [
-                    InlineKeyboardButton(text=ButtonText(user.lang).back_home, callback_data=ContextData.HOME)
-                ]
-            ])
+            reply_markup=error_keyboard(user.lang)
         )
 
 
@@ -104,23 +77,11 @@ def admin_exchanges_excel(update: Update, context: CallbackContext):
         query.message.reply_document(
             document=open("uploads/" + str(excel.file), 'rb'),
             filename="Exchanges.xlsx",
-            reply_markup=InlineKeyboardMarkup([
-                [
-                    InlineKeyboardButton(text=ButtonText(user.lang).back_home, callback_data=ContextData.HOME)
-                ]
-            ])
+            reply_markup=back_keyboard(user.lang)
         )
         query.message.delete()
     except FileNotFoundError or ValueError:
         query.edit_message_text(
             text=Message(user.lang).get_data_excel_error,
-            reply_markup=InlineKeyboardMarkup([
-                [
-                    InlineKeyboardButton(text="👨🏻‍💻 Dasturchiga murojaat qilish",
-                                         url="https://t.me/ikromjonxusanov"),
-                ],
-                [
-                    InlineKeyboardButton(text=ButtonText(user.lang).back_home, callback_data=ContextData.HOME)
-                ]
-            ])
+            reply_markup=error_keyboard(user.lang)
         )

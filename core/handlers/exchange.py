@@ -6,11 +6,12 @@ from telegram.ext import CallbackContext
 
 from core.decorators import login_user_query, login_user
 from core.handlers.core import home
-from core.helpers.keyboards import exchange_cancel_back_buttons
-from core.helpers.variables import get_bot_user, Message, ButtonText, ContextData, get_exchange_text, get_card_code, \
+from core.helpers.keyboards import exchange_retrieve_keyboard, exchange_get_keyboard, \
+    exchange_give_keyboard, currencies_keyboard
+from core.helpers.variables import get_bot_user, Message, ButtonText, get_exchange_text, get_card_code, \
     exchange_from_card_msg, exchange_to_card_msg, enter_card_number_msg, enter_min_summa_msg, \
     enter_repeat_card_number_msg, exchange_create_message, get_exchange_doc_msg
-from core.models import Currency, AcceptableCurrency, CurrencyMinBuy, Wallet, OwnerCardNumber, Exchange
+from core.models import Currency, CurrencyMinBuy, Wallet, OwnerCardNumber, Exchange
 from core.states import ENTER_SUMMA, ADD_FROM_CARD, ADD_TO_CARD, ALL
 
 
@@ -18,18 +19,10 @@ from core.states import ENTER_SUMMA, ADD_FROM_CARD, ADD_TO_CARD, ALL
 def currency_exchange(update: Update, context: CallbackContext):
     query = update.callback_query
     user = get_bot_user(query.from_user.id)
-    keyboard = []
-    currencies = Currency.objects.all()
-    for c in currencies:
-        keyboard.append([
-            InlineKeyboardButton(text="🔷" + c.name, callback_data=f'give/{c.id}'),
-            InlineKeyboardButton(text="🔶" + c.name, callback_data=f'get/{c.id}')
-        ])
-    keyboard.append([InlineKeyboardButton(text=ButtonText(user.lang).back, callback_data=ContextData.HOME)])
     query.edit_message_text(
         text=Message(user.lang).exchange,
         parse_mode="HTML",
-        reply_markup=InlineKeyboardMarkup(keyboard)
+        reply_markup=currencies_keyboard(user.lang)
     )
 
 
@@ -37,33 +30,13 @@ def currency_exchange(update: Update, context: CallbackContext):
 def give(update: Update, context: CallbackContext):
     query = update.callback_query
     user = get_bot_user(query.from_user.id)
-    keyboard = []
     pk = int(query.data.split('/')[1])
     currency = Currency.objects.get(id=pk)
-    currencies = Currency.objects.all()
-    acceptablecurrencies = AcceptableCurrency.objects.filter(currency=currency).first()
-    acceptable = acceptablecurrencies.acceptable.all()
-    for c in currencies:
-        data = [
-            InlineKeyboardButton(text="🔷" + c.name, callback_data=f'give/{c.id}'),
-            InlineKeyboardButton(text="➖", callback_data=f'none')
-        ]
-        if c.id == pk:
-            data[0] = InlineKeyboardButton(text="✅" + c.name, callback_data=f'give/{c.id}')
-        keyboard.append(data)
-    for i in range(len(acceptable)):
-        keyboard[i][1] = InlineKeyboardButton(text="🔶" + acceptable[i].name,
-                                              callback_data=f'exchange-get/{pk}/{acceptable[i].id}')
-
-    keyboard.extend(
-        exchange_cancel_back_buttons(user.lang)
-    )
-
     try:
         query.edit_message_text(
             text=Message(user.lang).exchange,
             parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup(keyboard)
+            reply_markup=exchange_give_keyboard(user.lang, currency)
         )
     except BadRequest:
         pass
@@ -73,48 +46,26 @@ def give(update: Update, context: CallbackContext):
 def get(update: Update, context: CallbackContext):
     query = update.callback_query
     user = get_bot_user(query.from_user.id)
-    keyboard = []
     pk = int(query.data.split('/')[1])
     query.answer()
     currency = Currency.objects.get(id=pk)
-    currencies = Currency.objects.all()
-    acceptablecurrencies = AcceptableCurrency.objects.filter(currency=currency).first()
-    acceptable = acceptablecurrencies.acceptable.all()
-    for c in currencies:
-        data = [
-            InlineKeyboardButton(text="➖", callback_data=f'none'),
-            InlineKeyboardButton(text="🔶" + c.name, callback_data=f'get/{c.id}'),
-        ]
-        if c.id == pk:
-            data[1] = InlineKeyboardButton(text="✅" + c.name, callback_data=f'get/{c.id}')
-        keyboard.append(data)
-    for i in range(len(acceptable)):
-        keyboard[i][0] = InlineKeyboardButton(text="🔷" + acceptable[i].name,
-                                              callback_data=f'exchange-get/{acceptable[i].id}/{pk}')
-    keyboard.extend(
-        exchange_cancel_back_buttons(user.lang)
-    )
     try:
         query.edit_message_text(
             text=Message(user.lang).exchange,
             parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup(keyboard)
+            reply_markup=exchange_get_keyboard(user.lang, currency)
         )
     except BadRequest:
         pass
 
 
 @login_user_query
-def exchange_get(update: Update, context: CallbackContext):
+def exchange_retrieve(update: Update, context: CallbackContext):
     query = update.callback_query
     user = get_bot_user(query.from_user.id)
     from_card = Currency.objects.filter(id=int(query.data.split('/')[1])).first()
     to_card = Currency.objects.filter(id=int(query.data.split('/')[2])).first()
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton(text=ButtonText(user.lang).give + from_card.name, callback_data="exchange_from_card")],
-        [InlineKeyboardButton(text=ButtonText(user.lang).get + to_card.name, callback_data="exchange_to_card")],
-        [InlineKeyboardButton(text=ButtonText(user.lang).cancel, callback_data=ContextData.HOME)],
-    ])
+    keyboard = exchange_retrieve_keyboard(user.lang, from_card.name, to_card.name)
     context.user_data["from_card"] = from_card
     context.user_data["to_card"] = to_card
     query.edit_message_text(text=get_exchange_text(user.lang, from_card, to_card),

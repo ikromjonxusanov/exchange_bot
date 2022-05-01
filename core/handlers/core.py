@@ -1,9 +1,10 @@
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import Update
 from telegram.ext import CallbackContext
 
-from core.helpers.variables import get_bot_user, Message, ContextData, ButtonText
+from core.helpers.variables import get_bot_user, Message, ContextData, ButtonText, get_course_reserve, get_reserve
 from core.decorators import login_user_query
-from core.helpers.keyboards import get_course_reserve, get_reserve, get_keyboard
+from core.helpers.keyboards import get_keyboard, reserve_keyboard, course_reserve_keyboard, back_keyboard, \
+    setting_keyboard
 from core.states import ALL, SET_LANG
 
 
@@ -22,26 +23,7 @@ def home(update: Update, context: CallbackContext, delete: bool = True):
 def setting(update: Update, context: CallbackContext):
     query = update.callback_query
     user = get_bot_user(query.from_user.id)
-    keyboard = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(
-                text=ButtonText(user.lang).set_lang,
-                callback_data='setLang'
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                text=ButtonText(user.lang).set_full_name,
-                callback_data='setFullName'
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                text=ButtonText(user.lang).back,
-                callback_data=ContextData.HOME
-            ),
-        ]
-    ])
+    keyboard = setting_keyboard(user.lang)
     query.edit_message_text(
         text=Message(user.lang).settings,
         parse_mode="HTML",
@@ -53,9 +35,7 @@ def setting(update: Update, context: CallbackContext):
 def feedback(update: Update, context: CallbackContext):
     query = update.callback_query
     user = get_bot_user(query.from_user.id)
-    keyboard = InlineKeyboardMarkup([[
-        InlineKeyboardButton(text=ButtonText(user.lang).back, callback_data=ContextData.HOME),
-    ]])
+    keyboard = back_keyboard(user.lang)
     query.edit_message_text(
         text=Message(user.lang).feedback,
         parse_mode="HTML",
@@ -67,9 +47,7 @@ def feedback(update: Update, context: CallbackContext):
 def set_full_name(update: Update, context: CallbackContext):
     query = update.callback_query
     user = get_bot_user(update.callback_query.from_user.id)
-    keyboard = InlineKeyboardMarkup([[
-        InlineKeyboardButton(text=ButtonText(user.lang).back, callback_data=ContextData.HOME),
-    ]])
+    keyboard = back_keyboard(user.lang)
     query.edit_message_text(
         text=Message(user.lang).set_full_name,
         parse_mode="HTML",
@@ -86,14 +64,7 @@ def none(update: Update, context: CallbackContext):
 def course_reserve(update: Update, context: CallbackContext):
     query = update.callback_query
     user = get_bot_user(query.from_user.id)
-    keyboard = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(text=ButtonText(user.lang).reserve, callback_data=ContextData.RESERVE)
-        ],
-        [
-            InlineKeyboardButton(text=ButtonText(user.lang).back, callback_data=ContextData.HOME),
-        ]
-    ])
+    keyboard = course_reserve_keyboard(user.lang)
     query.edit_message_text(
         text=get_course_reserve(user.lang),
         parse_mode="HTML",
@@ -105,14 +76,7 @@ def course_reserve(update: Update, context: CallbackContext):
 def reserve(update: Update, context: CallbackContext):
     query = update.callback_query
     user = get_bot_user(query.from_user.id)
-    keyboard = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(text=ButtonText(user.lang).course, callback_data='course_reserve')
-        ],
-        [
-            InlineKeyboardButton(text=ButtonText(user.lang).back, callback_data=ContextData.HOME),
-        ]
-    ])
+    keyboard = reserve_keyboard(user.lang)
     query.edit_message_text(
         text=get_reserve(user.lang),
         parse_mode="HTML",

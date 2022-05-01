@@ -1,39 +1,7 @@
-from core.helpers.variables import ButtonText, ContextData, Message
-from core.models import Currency
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from core.helpers.variables import ButtonText, ContextData
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 
-
-def get_course_reserve(lang):
-    if lang == 'ru':
-        buy = "📉 <b>Курс Продажи</b>"
-        sell = "📈 <b>Курс Покупки</b>"
-        code = "СУМ"
-    else:
-        buy = "📉 <b>Sotish kursi</b>"
-        sell = "📈 <b>Sotib olish kursi</b>"
-        code = "so'm"
-
-    data = f"{buy}"
-    buy_currencies = Currency.objects.all().filter(is_buy=True)
-    sell_currencies = Currency.objects.all().filter(is_sell=True)
-    for b in buy_currencies:
-        data += f"\n1 {b.name} = <b>{b.buy}</b> {code}"
-    data += f"\n\n{sell}"
-    for s in sell_currencies:
-        data += f"\n1 {s.name} = <b>{s.sell}</b> {code}"
-    return data
-
-
-def get_reserve(lang):
-    if lang == 'ru':
-        code = "СУМ"
-    else:
-        code = "so'm"
-    data = Message(lang).reserve + "\n"
-    currencies = Currency.objects.all().values('name', "reserve", 'flag')
-    for c in currencies:
-        data += f"\n{c['flag']} {c['name']} = <b>{c['reserve']}</b> <b>{code}</b>"
-    return data
+from core.models import Currency, AcceptableCurrency
 
 
 def exchange_cancel_back_buttons(lang):
@@ -61,3 +29,178 @@ def get_keyboard(lang, admin: bool = False):
     if admin:
         buttons.append([InlineKeyboardButton(ButtonText(lang).data, callback_data='data')])
     return InlineKeyboardMarkup(buttons)
+
+
+def reserve_keyboard(lang: str):
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(text=ButtonText(lang).course, callback_data='course_reserve')
+        ],
+        [
+            InlineKeyboardButton(text=ButtonText(lang).back, callback_data=ContextData.HOME),
+        ]
+    ])
+
+
+def course_reserve_keyboard(lang: str):
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(text=ButtonText(lang).reserve, callback_data=ContextData.RESERVE)
+        ],
+        [
+            InlineKeyboardButton(text=ButtonText(lang).back, callback_data=ContextData.HOME),
+        ]
+    ])
+
+
+def back_keyboard(lang):
+    return InlineKeyboardMarkup([[
+        InlineKeyboardButton(text=ButtonText(lang).back, callback_data=ContextData.HOME),
+    ]])
+
+
+def setting_keyboard(lang):
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                text=ButtonText(lang).set_lang,
+                callback_data='setLang'
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text=ButtonText(lang).set_full_name,
+                callback_data='setFullName'
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text=ButtonText(lang).back,
+                callback_data=ContextData.HOME
+            ),
+        ]
+    ])
+
+
+def admin_data(lang):
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                text=ButtonText(lang).get_users_for_excel_button, callback_data='users_excel'
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=ButtonText(lang).get_changes_for_excel_button, callback_data='exchanges_excel'
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=ButtonText(lang).back_home, callback_data=ContextData.HOME
+            )
+        ]
+    ])
+
+
+def error_keyboard(lang):
+    InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                text="👨🏻‍💻 Dasturchiga murojaat qilish" if lang == 'uz' else "👨🏻‍💻 Связаться с разработчиком",
+                url="https://t.me/ikromjonxusanov"),
+        ],
+        [
+            InlineKeyboardButton(text=ButtonText(lang).back_home, callback_data=ContextData.HOME)
+        ]
+    ])
+
+
+def uz_ru_keyboard():
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(text="🇺🇿 O'zbek tili", callback_data='uz'),
+            InlineKeyboardButton(text="🇷🇺 русский язык", callback_data="ru")
+        ]
+    ])
+
+
+def contact_keyboard(btn_text):
+    return ReplyKeyboardMarkup([[KeyboardButton(btn_text, request_contact=True)]],
+                               resize_keyboard=True, selective=True)
+
+
+def exchange_retrieve_keyboard(lang, from_name, to_name):
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(text=ButtonText(lang).give + from_name, callback_data="exchange_from_card")],
+        [InlineKeyboardButton(text=ButtonText(lang).get + to_name, callback_data="exchange_to_card")],
+        [InlineKeyboardButton(text=ButtonText(lang).cancel, callback_data=ContextData.HOME)],
+    ])
+
+
+def exchange_get_keyboard(lang: str, currency: Currency):
+    keyboard = []
+    currencies = Currency.objects.all()
+    acceptablecurrencies = AcceptableCurrency.objects.filter(currency=currency).first()
+    acceptable = acceptablecurrencies.acceptable.all()
+    for c in currencies:
+        data = [
+            InlineKeyboardButton(text="➖", callback_data=f'none'),
+            InlineKeyboardButton(text="🔶" + c.name, callback_data=f'get/{c.id}'),
+        ]
+        if c.id == currency.id:
+            data[1] = InlineKeyboardButton(text="✅" + c.name, callback_data=f'get/{c.id}')
+        keyboard.append(data)
+    for i in range(len(acceptable)):
+        keyboard[i][0] = InlineKeyboardButton(text="🔷" + acceptable[i].name,
+                                              callback_data=f'exchange-retrieve/{acceptable[i].id}/{currency.id}')
+    keyboard.extend(
+        exchange_cancel_back_buttons(lang)
+    )
+    return InlineKeyboardMarkup(keyboard)
+
+
+def exchange_give_keyboard(lang: str, currency: Currency):
+    keyboard = []
+    currencies = Currency.objects.all()
+    acceptablecurrencies = AcceptableCurrency.objects.filter(currency=currency).first()
+    acceptable = acceptablecurrencies.acceptable.all()
+    for c in currencies:
+        data = [
+            InlineKeyboardButton(text="🔷" + c.name, callback_data=f'give/{c.id}'),
+            InlineKeyboardButton(text="➖", callback_data=f'none')
+        ]
+        if c.id == currency.id:
+            data[0] = InlineKeyboardButton(text="✅" + c.name, callback_data=f'give/{c.id}')
+        keyboard.append(data)
+    for i in range(len(acceptable)):
+        keyboard[i][1] = InlineKeyboardButton(text="🔶" + acceptable[i].name,
+                                              callback_data=f'exchange-retrieve/{currency.id}/{acceptable[i].id}')
+
+    keyboard.extend(
+        exchange_cancel_back_buttons(lang)
+    )
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+def currencies_keyboard(lang):
+    keyboard = []
+    currencies = Currency.objects.all()
+    for c in currencies:
+        keyboard.append([
+            InlineKeyboardButton(text="🔷" + c.name, callback_data=f'give/{c.id}'),
+            InlineKeyboardButton(text="🔶" + c.name, callback_data=f'get/{c.id}')
+        ])
+    keyboard.append([InlineKeyboardButton(text=ButtonText(lang).back, callback_data=ContextData.HOME)])
+    return InlineKeyboardMarkup(keyboard)
+
+
+def wallet_add_keyboard(lang):
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(ButtonText(lang).wallet, callback_data=ContextData.WALLET)
+        ],
+        [
+            InlineKeyboardButton(ButtonText(lang).back_home, callback_data=ContextData.HOME)
+        ]
+    ])

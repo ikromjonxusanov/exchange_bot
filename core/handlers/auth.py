@@ -2,7 +2,7 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKe
     ReplyKeyboardRemove
 from telegram.ext import CallbackContext
 from core.helpers.variables import get_bot_user, Message
-from core.helpers.keyboards import get_keyboard
+from core.helpers.keyboards import get_keyboard, uz_ru_keyboard, contact_keyboard
 from core.states import FULL_NAME, PHONE, ALL, LANG
 
 
@@ -16,12 +16,7 @@ def start(update: Update, context: CallbackContext, pk=None):
         update.message.reply_html(Message(user.lang).HOME,
                                   reply_markup=get_keyboard(lang=user.lang, admin=user.is_admin))
         return ALL
-    keyboard = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(text="🇺🇿 O'zbek tili", callback_data='uz'),
-            InlineKeyboardButton(text="🇷🇺 русский язык", callback_data="ru")
-        ]
-    ])
+    keyboard = uz_ru_keyboard()
     if pk is None:
         update.message.reply_html("Tilni tanlang👇\n-----------\nВыберите язык👇", reply_markup=keyboard)
     else:
@@ -63,8 +58,7 @@ def full_name(update: Update, context: CallbackContext) -> int:
         btn_text = '📲 Отправить контакт'
         text = "📲 Отправьте свой номер телефона"
 
-    reply_markup = ReplyKeyboardMarkup([[KeyboardButton(btn_text, request_contact=True)]],
-                                       resize_keyboard=True, selective=True)
+    reply_markup = contact_keyboard(btn_text)
     update.message.reply_html(text, reply_markup=reply_markup)
     return PHONE
 
@@ -90,12 +84,7 @@ def ru_set(update: Update, context: CallbackContext):
 def set_language(update: Update, context: CallbackContext):
     query = update.callback_query
     user = get_bot_user(query.from_user.id)
-    keyboard = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(text="🇺🇿 O'zbek tili", callback_data='uz-set'),
-            InlineKeyboardButton(text="🇷🇺 русский язык", callback_data="ru-set")
-        ]
-    ])
+    keyboard = uz_ru_keyboard()
     query.message.delete()
     query.message.reply_html('Tilni tanlang👇' if user.lang == 'uz' else 'Выберите язык👇', reply_markup=keyboard)
 
