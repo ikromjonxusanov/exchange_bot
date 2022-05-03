@@ -1,5 +1,6 @@
 import os
 from django.db import models
+from django.dispatch import receiver
 
 from account.models import BotUser
 
@@ -70,9 +71,9 @@ class Wallet(models.Model):
 
 class Exchange(models.Model):
     STATUS = (
-        ('Tekshiruvda', 'Tekshiruvda'),
-        ('Bekor qilingan', "Bekor qilingan"),
-        ("Muvaffaqiyatli tugadi", "Muvaffaqiyatli tugadi")
+        ('checking', 'Tekshiruvda'),
+        ('cancel', "Admin tomonidan bekor qilingan"),
+        ("success", "Muvaffaqiyatli tugadi")
     )
     user = models.ForeignKey(BotUser, verbose_name="Foydalanuvchi", on_delete=models.SET_NULL, null=True)
     from_card = models.ForeignKey(Currency, verbose_name="Valyutadan", on_delete=models.SET_NULL, null=True,
@@ -85,7 +86,7 @@ class Exchange(models.Model):
     give_code = models.CharField(max_length=10, null=True, verbose_name="Berish kodi")
     get = models.FloatField(default=0, verbose_name="Olish")
     get_code = models.CharField(max_length=10, null=True, verbose_name="Olish kodi")
-    status = models.CharField(choices=STATUS, default='being check', max_length=60)
+    status = models.CharField(choices=STATUS, default='checking', max_length=60)
 
     class Meta:
         verbose_name = "Ayirboshlash"
@@ -98,10 +99,6 @@ class Excel(models.Model):
                                   null=True)
     file = models.FileField("Fayl", default='static/null.xlsx')
     create_at = models.DateTimeField("Yaratilgan sana", auto_now_add=True)
-
-    def delete(self, *args, **kwargs):
-        os.system(f"rm -rf uploads/{self.file.name}")
-        super(Excel, self).delete(*args, **kwargs)
 
     class Meta:
         verbose_name = "Ma'lumot"
@@ -118,3 +115,26 @@ class OwnerCardNumber(models.Model):
     class Meta:
         verbose_name = "Admin kartalari"
         verbose_name_plural = verbose_name
+
+
+@receiver(models.signals.post_delete, sender=Excel)
+def auto_delete_file_on_delete(sender, instance, **kwargs):
+    if instance.file:
+        if os.path.isfile(instance.file.path):
+            os.remove(instance.file.path)
+
+
+@receiver(models.signals.pre_save, sender=Excel)
+def auto_delete_file_on_change(sender, instance, **kwargs):
+    if not instance.pk:
+        return False
+
+    try:
+        old_file = Excel.objects.get(pk=instance.pk).file
+    except Excel.DoesNotExist:
+        return False
+
+    new_file = instance.file
+    if not old_file == new_file:
+        if os.path.isfile(old_file.path):
+            os.remove(old_file.path)

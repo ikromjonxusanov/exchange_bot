@@ -2,7 +2,7 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKe
     ReplyKeyboardRemove
 from telegram.ext import CallbackContext
 from core.helpers.variables import get_bot_user, Message
-from core.helpers.keyboards import get_keyboard, uz_ru_keyboard, contact_keyboard
+from core.helpers.keyboards import get_keyboard, uz_ru_keyboard, contact_keyboard, uz_ru_set_keyboard
 from core.states import FULL_NAME, PHONE, ALL, LANG
 
 
@@ -84,7 +84,7 @@ def ru_set(update: Update, context: CallbackContext):
 def set_language(update: Update, context: CallbackContext):
     query = update.callback_query
     user = get_bot_user(query.from_user.id)
-    keyboard = uz_ru_keyboard()
+    keyboard = uz_ru_set_keyboard()
     query.message.delete()
     query.message.reply_html('Tilni tanlang👇' if user.lang == 'uz' else 'Выберите язык👇', reply_markup=keyboard)
 
@@ -95,8 +95,6 @@ def phonenumber(update: Update, context: CallbackContext) -> int:
     user.phone = update.message.contact.phone_number
     user.is_active = True
     user.save()
-    update.message.reply_html(text="🤖 Bot dan muvaffaqiyatlili ro‘yxatdan o‘tdingiz!!! ✅",
-                              reply_markup=ReplyKeyboardRemove(remove_keyboard=True))
     update.message.reply_html(Message(user.lang).HOME, reply_markup=get_keyboard(user.lang, admin=user.is_admin))
     return ALL
 

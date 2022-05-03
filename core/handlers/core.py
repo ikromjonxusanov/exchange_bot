@@ -1,10 +1,12 @@
 from telegram import Update
 from telegram.ext import CallbackContext
 
-from core.helpers.variables import get_bot_user, Message, ContextData, ButtonText, get_course_reserve, get_reserve
+from core.helpers.variables import get_bot_user, Message, get_course_reserve, get_reserve, \
+    get_exchange_doc_msg
 from core.decorators import login_user_query
 from core.helpers.keyboards import get_keyboard, reserve_keyboard, course_reserve_keyboard, back_keyboard, \
     setting_keyboard
+from core.models import Exchange
 from core.states import ALL, SET_LANG
 
 
@@ -81,4 +83,24 @@ def reserve(update: Update, context: CallbackContext):
         text=get_reserve(user.lang),
         parse_mode="HTML",
         reply_markup=keyboard
+    )
+
+
+@login_user_query
+def exchanges_history(update: Update, context: CallbackContext):
+    query = update.callback_query
+    user = get_bot_user(query.from_user.id)
+    exchanges = Exchange.objects.filter(user=user).order_by("-pk")
+    msg = "<b>🧾 Alamshuvlar</b>\n\n" if user.lang == 'uz' else "<b>🧾 Обмены</b>\n\n"
+    if len(exchanges) > 0:
+        for i in range(len(exchanges)):
+            msg += get_exchange_doc_msg(exchanges[i], user.lang)
+            if i != len(exchanges)-1:
+                msg += f"\n{'-'*75}\n"
+    else:
+        msg += "<i>Almashinuv tarixi topilmadi</i>" if user.lang == "uz" else "<i>История Обмен не найден</i>"
+    query.edit_message_text(
+        msg,
+        parse_mode="HTML",
+        reply_markup=back_keyboard(user.lang)
     )

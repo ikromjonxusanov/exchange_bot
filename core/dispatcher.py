@@ -5,7 +5,7 @@ from telegram.utils.request import Request
 
 from core.handlers.admin_excel import admin_get_data, admin_users_excel, admin_exchanges_excel
 from core.handlers.auth import start, set_language, uz_set, ru_set, uz, ru, full_name, phonenumber, edit_full_name
-from core.handlers.core import home, setting, feedback, set_full_name, none, course_reserve, reserve
+from core.handlers.core import home, setting, feedback, set_full_name, none, course_reserve, reserve, exchanges_history
 from core.handlers.exchange import currency_exchange, give, get, exchange_from_card, exchange_to_card, exchange_retrieve, \
     exchange_create, exchange_save, enter_to_card, enter_from_card, enter_summa
 from core.handlers.wallet import wallet, wallet_add, add_card, delete_card, delete_wallets, user_wallet_add
@@ -44,6 +44,7 @@ def entry_points() -> list:
         CallbackQueryHandler(exchange_retrieve, pattern='exchange-retrieve'),
         CallbackQueryHandler(exchange_create, pattern='^(exchange_create)$'),
         CallbackQueryHandler(exchange_save, pattern='^(exchange_save)$'),
+        CallbackQueryHandler(exchanges_history, pattern='^(exchanges_history)$'),
 
     ]
 

@@ -18,7 +18,7 @@ def get_keyboard(lang, admin: bool = False):
             InlineKeyboardButton(ButtonText(lang).wallet, callback_data=ContextData.WALLET),
         ],
         [
-            InlineKeyboardButton(ButtonText(lang).exchanges, callback_data='none'),
+            InlineKeyboardButton(ButtonText(lang).exchanges_history, callback_data='exchanges_history'),
             InlineKeyboardButton(ButtonText(lang).course_reserve, callback_data='course_reserve')
         ],
         [
@@ -124,9 +124,17 @@ def uz_ru_keyboard():
     ])
 
 
+def uz_ru_set_keyboard():
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(text="🇺🇿 O'zbek tili", callback_data='uz-set'),
+            InlineKeyboardButton(text="🇷🇺 русский язык", callback_data="ru-set")
+        ]
+    ])
+
+
 def contact_keyboard(btn_text):
-    return ReplyKeyboardMarkup([[KeyboardButton(btn_text, request_contact=True)]],
-                               resize_keyboard=True, selective=True)
+    return ReplyKeyboardMarkup([[KeyboardButton(btn_text, request_contact=True)]], one_time_keyboard=True, resize_keyboard=True)
 
 
 def exchange_retrieve_keyboard(lang, from_name, to_name):

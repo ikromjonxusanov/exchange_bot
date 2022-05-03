@@ -279,8 +279,7 @@ def exchange_save(update: Update, context: CallbackContext):
     query = update.callback_query
     user = get_bot_user(query.from_user.id)
     exchange = Exchange.objects.create(**context.user_data['e'])
-    msg = get_exchange_doc_msg(exchange, user.lang,
-                               context.user_data['from_card'], context.user_data['to_card'])
+    msg = get_exchange_doc_msg(exchange, user.lang)
     query.edit_message_text("⏳")
     query.message.reply_html(
         msg

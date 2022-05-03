@@ -5,36 +5,26 @@ from core.models import Exchange, Currency, Wallet, CurrencyMinBuy
 
 
 def get_feedback(lang):
-    exchanges = Exchange.objects.count()
-    clients = BotUser.objects.count()
     if lang == 'uz':
-        return f"""👨‍💻 @Uzchangenetbot - Самая надежная и удобная система обмена электронных валют в Узбекистане!!!
-
-⁉ Если у вас есть какие - либо вопросы или предложения относительно наших услуг, пожалуйста, свяжитесь с нами. 
-
-💹 @uzchange_pay
-
-Центр поддержки: 👨‍💻 @ikromjon_xusanov
-
-💸Все транзакции: {exchanges}
-👥Все пользователи: {clients}
-
-👨‍💻Разработчик: @ikromjon_xusanov
-        """
+        return (
+            "Bot 08:00 dan 00:00 gacha kun davomida ruchnoy rejimda ishlaydi, operator tomonidan 5 daqiqadan 10 daqiqagacha bajariladi.\n\n"
+            "🔗Bizning blogimiz linki:\n"
+            "@change_bot_test_chat\n\n"
+            "💁‍♂️Agar bizning xizmatimizga tegishli har qanday savol / takliflaringiz bo'lsa, bemalol murojat qilishingiz mumkin.\n"
+            "🕙Texnik yordam ish vaqti soatlari:\n"
+            "08:00 dan 00:00 gacha\n\n"
+            "👨‍💻Qo'llab-quvvatlash: @ikromjonxusanov"
+        )
     else:
-        return f"""👨‍💻 @Uzchangenetbot - Самая надежная и удобная система обмена электронных валют в Узбекистане!!!
-
-        ⁉ Если у вас есть какие - либо вопросы или предложения относительно наших услуг, пожалуйста, свяжитесь с нами. 
-
-        💹 @uzchange_pay
-
-        Центр поддержки: 👨‍💻 @ikromjon_xusanov
-
-        💸Все транзакции: {exchanges}
-        👥Все пользователи: {clients}
-
-        👨‍💻Разработчик: @ikromjon_xusanov
-        """
+        return (
+            "Бот работает в ручном режиме с 08:00 до 00:00 в течение дня, выполняется оператором от 5 до 10 минут.\n\n"
+            "🔗Ссылка на наш блог:\n"
+            "@change_bot_test_chat\n\n"
+            "💁‍♂️Если у вас есть какие-либо вопросы/предложения относительно нашего сервиса, не стесняйтесь обращаться к нам.\n"
+            "🕙Часы работы технической поддержки:\n"
+            "с 08:00 до 00:00\n\n"
+            "👨‍💻Поддержка: @ikromjonxusanov"
+        )
 
 
 class Message:
@@ -93,7 +83,7 @@ class ButtonText:
             self.currency_exchange = "♻️ Valyuta ayirboshlash"
             self.wallet = "🔰 Hamyonlar"
             self.course_reserve = "📈 Kurs / 💰 Zahira"
-            self.exchanges = "🧾 Almashuvlar"
+            self.exchanges_history = "🧾 Almashuvlar"
             self.feedback = "📞 Qayta aloqa"
             self.settings = "⚙️ Sozlamalar"
             self.set_lang = "📝 Tilni o'zgartirish"
@@ -114,7 +104,7 @@ class ButtonText:
             self.currency_exchange = "♻️ Обмен валюты"
             self.wallet = "🔰 Кошельки"
             self.course_reserve = "📈 Курс / 💰 Забронировать"
-            self.exchanges = "🧾 Обмены"
+            self.exchanges_history = "🧾 Обмены"
             self.feedback = "📞 Обратная связь"
             self.settings = "⚙️ Настройки"
             self.set_lang = "📝 Изменить язык"
@@ -266,26 +256,44 @@ def get_card_code(card: Currency, lang: str) -> str:
     return code
 
 
-def get_exchange_doc_msg(exchange: Exchange, lang: str, from_card, to_card) -> str:
+def get_status(status: str, lang: str):
+    if lang == 'uz':
+        if status == 'checking':
+            return "Tekshiruvda"
+        elif status == "cancel":
+            return "Admin tomonidan bekor qilingan"
+        elif status == "success":
+            return "Muvaffaqiyatli tugadi"
+    else:
+        if status == 'checking':
+            return "В обработке"
+        elif status == "cancel":
+            return "Админ отменил сделку"
+        elif status == "success":
+            return "Успешно завершено"
+
+
+def get_exchange_doc_msg(exchange: Exchange, lang: str) -> str:
     date = "{:%d.%m.%Y %H:%M}".format(datetime.now())
+    status = get_status(exchange.status, lang)
     if lang == "uz":
         return (f"🆔 Almashuv: {exchange.id}"
-                f"\n🔀:{from_card} ➡️ {to_card}"
-                f"\n{from_card.flag}{from_card}: {exchange.from_number}"
+                f"\n🔀:{exchange.from_card} ➡️ {exchange.to_card}"
+                f"\n{exchange.from_card.flag}{exchange.from_card}: {exchange.from_number}"
                 f"\n💸: {exchange.give} {exchange.give_code}"
-                f"\n{to_card.flag}{to_card}: {exchange.to_number}"
+                f"\n{exchange.to_card.flag}{exchange.to_card}: {exchange.to_number}"
                 f"\n💰: {exchange.get} {exchange.get_code}"
-                f"\n📌To‘lov: Tekshiruvda."
+                f"\n📌To‘lov: {status}."
                 f"\n📆O‘tkazma sanasi: {date}"
                 )
     else:
         return (f"🆔 Заявка: {exchange.id}"
-                f"\n🔀:{from_card} ➡️ {to_card}"
-                f"\n{from_card}: {exchange.from_card}"
+                f"\n🔀:{exchange.from_card} ➡️ {exchange.to_card}"
+                f"\n{exchange.from_card.flag}{exchange.from_card}: {exchange.from_number}"
                 f"\n💸: {exchange.give} {exchange.give_code}"
-                f"\n{to_card}: {exchange.to_card}"
-                f"\n: {exchange.get} {exchange.get_code}"
-                f"\n📌 Статус оплаты: В обработке."
+                f"\n{exchange.to_card.flag}{exchange.to_card}: {exchange.to_number}"
+                f"\n💰: {exchange.get} {exchange.get_code}"
+                f"\n📌 Статус оплаты: {status}."
                 f"\n📆Дата заявки: {date}"
                 )
 
