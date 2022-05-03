@@ -1,5 +1,6 @@
 import re
 
+from django.conf import settings
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from telegram.error import BadRequest
 from telegram.ext import CallbackContext
@@ -285,6 +286,6 @@ def exchange_save(update: Update, context: CallbackContext):
         msg
     )
     private = f"👤 {user.full_name}\n📞 {user.phone}\n"
-    context.bot.send_message(chat_id="@change_bot_test_chat", parse_mode="html", text=msg)
-    context.bot.send_message(chat_id="-779642309", parse_mode="html", text=private + msg)
+    context.bot.send_message(chat_id=settings.PUBLIC_GROUP_USERNAME, parse_mode="html", text=msg)
+    context.bot.send_message(chat_id=settings.PRIVATE_GROUP_ID, parse_mode="html", text=private + msg)
     home(update, context, delete=False)

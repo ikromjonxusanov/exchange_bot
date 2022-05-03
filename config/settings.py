@@ -102,6 +102,12 @@ MEDIA_ROOT = BASE_DIR / 'uploads'
 TOKEN = env("BOT_TOKEN")
 PROXY_URL = 'https://api.telegram.org/bot'
 
+TELEGRAPH_ACCESS_TOKEN = env('TELEGRAPH_ACCESS_TOKEN')
+
+PUBLIC_GROUP_USERNAME = env('PUBLIC_GROUP_USERNAME')
+
+PRIVATE_GROUP_ID = env('PRIVATE_GROUP_ID', cast=str)
+
 AUTH_USER_MODEL = 'account.User'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

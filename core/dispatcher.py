@@ -8,6 +8,7 @@ from core.handlers.auth import start, set_language, uz_set, ru_set, uz, ru, full
 from core.handlers.core import home, setting, feedback, set_full_name, none, course_reserve, reserve, exchanges_history
 from core.handlers.exchange import currency_exchange, give, get, exchange_from_card, exchange_to_card, exchange_retrieve, \
     exchange_create, exchange_save, enter_to_card, enter_from_card, enter_summa
+from core.handlers.referral import referral, read_more, my_referrals, withdraw_money
 from core.handlers.wallet import wallet, wallet_add, add_card, delete_card, delete_wallets, user_wallet_add
 from core.helpers.variables import ContextData
 from core.states import LANG, FULL_NAME, PHONE, SET_LANG, ALL, CARD_ADD, ENTER_SUMMA, ADD_FROM_CARD, ADD_TO_CARD
@@ -45,6 +46,10 @@ def entry_points() -> list:
         CallbackQueryHandler(exchange_create, pattern='^(exchange_create)$'),
         CallbackQueryHandler(exchange_save, pattern='^(exchange_save)$'),
         CallbackQueryHandler(exchanges_history, pattern='^(exchanges_history)$'),
+        CallbackQueryHandler(referral, pattern='^(referral)$'),
+        CallbackQueryHandler(read_more, pattern='^(read_more)$'),
+        CallbackQueryHandler(my_referrals, pattern='^(my_referrals)$'),
+        CallbackQueryHandler(withdraw_money, pattern='^(withdraw_money)$'),
 
     ]
 

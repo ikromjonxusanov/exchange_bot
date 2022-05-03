@@ -7,6 +7,7 @@ from core.states import FULL_NAME, PHONE, ALL, LANG
 
 
 def start(update: Update, context: CallbackContext, pk=None):
+    print(update.message.text.split())
     if pk is None:
         user_id = update.message.from_user.id
     else:

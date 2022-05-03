@@ -1,4 +1,5 @@
 from datetime import datetime
+from telegram.ext import CallbackContext
 
 from account.models import BotUser
 from core.models import Exchange, Currency, Wallet, CurrencyMinBuy
@@ -100,6 +101,7 @@ class ButtonText:
             self.data = "📔 Ma'lumotlarni yuklab olish"
             self.give = "⬆️Berishni kiritish "
             self.get = "⬇️Olish kiritish "
+            self.refferal = "👥 Referal"
         else:
             self.currency_exchange = "♻️ Обмен валюты"
             self.wallet = "🔰 Кошельки"
@@ -121,6 +123,7 @@ class ButtonText:
             self.data = "📔 Скачать данные"
             self.give = "⬆ Отдать "
             self.get = "⬇ Получить "
+            self.refferal = "👥 Реферал"
 
     @property
     def get_users_for_excel_button(self) -> str:
@@ -278,13 +281,13 @@ def get_exchange_doc_msg(exchange: Exchange, lang: str) -> str:
     status = get_status(exchange.status, lang)
     if lang == "uz":
         return (f"🆔 Almashuv: {exchange.id}"
-                f"\n🔀:{exchange.from_card} ➡️ {exchange.to_card}"
-                f"\n{exchange.from_card.flag}{exchange.from_card}: {exchange.from_number}"
-                f"\n💸: {exchange.give} {exchange.give_code}"
-                f"\n{exchange.to_card.flag}{exchange.to_card}: {exchange.to_number}"
-                f"\n💰: {exchange.get} {exchange.get_code}"
-                f"\n📌To‘lov: {status}."
-                f"\n📆O‘tkazma sanasi: {date}"
+                f"<br/>🔀:{exchange.from_card} ➡️ {exchange.to_card}"
+                f"<br/>{exchange.from_card.flag}{exchange.from_card}: {exchange.from_number}"
+                f"<br/>💸: {exchange.give} {exchange.give_code}"
+                f"<br/>{exchange.to_card.flag}{exchange.to_card}: {exchange.to_number}"
+                f"<br/>💰: {exchange.get} {exchange.get_code}"
+                f"<br/>📌To‘lov: {status}."
+                f"<br/>📆O‘tkazma sanasi: {date}"
                 )
     else:
         return (f"🆔 Заявка: {exchange.id}"
@@ -329,3 +332,56 @@ def get_reserve(lang):
     for c in currencies:
         data += f"\n{c['flag']} {c['name']} = <b>{c['reserve']}</b> <b>{code}</b>"
     return data
+
+
+def referral_msg(user: BotUser, context: CallbackContext):
+    if user.lang == "uz":
+        return (
+            "👥 <b>Referal</b>"
+            "\n💰 <b>Balansingiz</b>: <i>0</i> so'm"
+            "\n<i>Do'stlaringizni botga taklif qiling va ro'yxatdan o'tgan 50 so'm sizning hisobingizga tushadi</i>"
+            f"\n<b>Sizning havolangiz</b>: t.me/{context.bot.username}?start={user.tg_id}"
+        )
+    else:
+        return (
+            "👥 Реферал"
+            "\n💰 <b>Ваш баланс</b>: <i>0</i> сум"
+            "\n<i>Пригласите своих друзей в бота и зарегистрированные 50 сумов будут зачислены на ваш счет</i>"
+            f"\n <b> Ваша ссылка </b>: t.me/{context.bot.username}?start={user.tg_id}"
+        )
+
+
+def referral_button_text(lang):
+    if lang == 'uz':
+        return {
+            "read-more": "📑 Batafsil",
+            "withdraw-money": "📥 Pul yechish",
+            "my-referrals": "👥 Referallarim",
+        }
+    else:
+        return {
+            "read-more": "📑 Прочитайте больше",
+            "withdraw-money": "📥 Снять деньги",
+            "my-referrals": "👥 Мои рефералы",
+        }
+
+
+def referral_read_me(lang):
+    if lang == 'uz':
+        return "Do'stlaringizni botga taklif qiling va ro'yxatdan o'tgan 50 so'm sizning hisobingizga tushadi"
+    else:
+        return "Пригласите своих друзей в бота и зарегистрированные 50 сумов будут зачислены на ваш счет"
+
+
+def my_referrals_msg(lang, count):
+    if lang == 'uz':
+        return f"Foydalanuvchilar soni {count} ta"
+    else:
+        return f"Количество пользователей {count}"
+
+
+def withdraw_money_msg(lang):
+    if lang == 'uz':
+        return "Yechish uchun eng kam mablag' miqdori 100 000 UZS"
+    else:
+        return "Минимальная сумма для решения 100 000 сум"

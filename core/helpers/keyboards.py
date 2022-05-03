@@ -1,4 +1,4 @@
-from core.helpers.variables import ButtonText, ContextData
+from core.helpers.variables import ButtonText, ContextData, referral_button_text
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 
 from core.models import Currency, AcceptableCurrency
@@ -24,6 +24,9 @@ def get_keyboard(lang, admin: bool = False):
         [
             InlineKeyboardButton(ButtonText(lang).settings, callback_data=ContextData.SETTINGS),
             InlineKeyboardButton(ButtonText(lang).feedback, callback_data=ContextData.FEEDBACK)
+        ],
+        [
+            InlineKeyboardButton(ButtonText(lang).refferal, callback_data="referral")
         ],
     ]
     if admin:
@@ -134,7 +137,8 @@ def uz_ru_set_keyboard():
 
 
 def contact_keyboard(btn_text):
-    return ReplyKeyboardMarkup([[KeyboardButton(btn_text, request_contact=True)]], one_time_keyboard=True, resize_keyboard=True)
+    return ReplyKeyboardMarkup([[KeyboardButton(btn_text, request_contact=True)]], one_time_keyboard=True,
+                               resize_keyboard=True)
 
 
 def exchange_retrieve_keyboard(lang, from_name, to_name):
@@ -212,3 +216,23 @@ def wallet_add_keyboard(lang):
             InlineKeyboardButton(ButtonText(lang).back_home, callback_data=ContextData.HOME)
         ]
     ])
+
+
+def referral_keyboard(lang):
+    referral_buttons_text = referral_button_text(lang)
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(text=referral_buttons_text['withdraw-money'], callback_data="withdraw_money"),
+            InlineKeyboardButton(text=referral_buttons_text['my-referrals'], callback_data="my_referrals"),
+        ],
+        [
+            InlineKeyboardButton(text=referral_buttons_text["read-more"], callback_data="read_more"),
+            InlineKeyboardButton(text=ButtonText(lang).back, callback_data=ContextData.HOME),
+        ]
+    ])
+
+
+def back_referral_keyboard(lang):
+    return InlineKeyboardMarkup([[
+        InlineKeyboardButton(text=ButtonText(lang).back, callback_data="referral"),
+    ]])

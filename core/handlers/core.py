@@ -1,6 +1,7 @@
 from telegram import Update
 from telegram.ext import CallbackContext
 
+from core.helpers.telegraf import text_to_telegraph
 from core.helpers.variables import get_bot_user, Message, get_course_reserve, get_reserve, \
     get_exchange_doc_msg
 from core.decorators import login_user_query
@@ -91,16 +92,18 @@ def exchanges_history(update: Update, context: CallbackContext):
     query = update.callback_query
     user = get_bot_user(query.from_user.id)
     exchanges = Exchange.objects.filter(user=user).order_by("-pk")
-    msg = "<b>🧾 Alamshuvlar</b>\n\n" if user.lang == 'uz' else "<b>🧾 Обмены</b>\n\n"
+    title = "Almashinuv tarixi" if user.lang == 'uz' else "История обмена"
+    msg = "<h3>🧾 Alamshuvlar</h3><br/>" if user.lang == 'uz' else "<h3>🧾 Обмены</h3><br/>"
     if len(exchanges) > 0:
         for i in range(len(exchanges)):
             msg += get_exchange_doc_msg(exchanges[i], user.lang)
             if i != len(exchanges)-1:
-                msg += f"\n{'-'*75}\n"
+                msg += f"<br/>{'-'*75}<br/>"
     else:
         msg += "<i>Almashinuv tarixi topilmadi</i>" if user.lang == "uz" else "<i>История Обмен не найден</i>"
+    text = text_to_telegraph(title, msg)
     query.edit_message_text(
-        msg,
+        text,
         parse_mode="HTML",
         reply_markup=back_keyboard(user.lang)
     )
