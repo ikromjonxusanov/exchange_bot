@@ -7,15 +7,25 @@ from core.states import FULL_NAME, PHONE, ALL, LANG
 
 
 def start(update: Update, context: CallbackContext, pk=None):
-    print(update.message.text.split())
+    # print(update.message.text.split())
     if pk is None:
         user_id = update.message.from_user.id
     else:
         user_id = pk
     user = get_bot_user(user_id)
     if user.is_active:
-        update.message.reply_html(Message(user.lang).HOME,
-                                  reply_markup=get_keyboard(lang=user.lang, admin=user.is_admin))
+        if pk is None:
+            update.message.reply_html(Message(user.lang).HOME,
+                                      reply_markup=get_keyboard(lang=user.lang, admin=user.is_admin))
+        else:
+            update.callback_query.edit_message_text(
+                text=Message(user.lang).HOME,
+                parse_mode="HTML",
+                reply_markup=get_keyboard(
+                    lang=user.lang,
+                    admin=user.is_admin
+                )
+            )
         return ALL
     keyboard = uz_ru_keyboard()
     if pk is None:

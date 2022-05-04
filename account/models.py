@@ -81,6 +81,7 @@ class BotUser(TimeStampedModel):
     is_active = models.BooleanField(default=False, null=True, blank=True, verbose_name="Faol")
     lang = models.CharField(max_length=2, choices=LANG, verbose_name="Til")
     is_admin = models.BooleanField(default=False, null=True, blank=True, verbose_name="Admin")
+    referral_user = models.ForeignKey("BotUser", on_delete=models.SET_NULL, null=True, blank=True)
     create_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

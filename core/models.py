@@ -138,3 +138,16 @@ def auto_delete_file_on_change(sender, instance, **kwargs):
     if not old_file == new_file:
         if os.path.isfile(old_file.path):
             os.remove(old_file.path)
+
+
+class Referral(models.Model):
+    user = models.ForeignKey(BotUser, on_delete=models.CASCADE)
+    funds = models.FloatField(default=0)
+
+
+class ReferralWithdrawMoney(models.Model):
+    user = models.ForeignKey(Referral, on_delete=models.SET_NULL, null=True, blank=True)
+    summa = models.FloatField(default=100000)
+    is_active = models.BooleanField(default=False)
+    create_at = models.DateTimeField(auto_now_add=True)
+    update_at = models.DateTimeField(auto_now_add=True)
